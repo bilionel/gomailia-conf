@@ -1,0 +1,4 @@
+---
+# defaults file for webmailserver
+ubuntu_packages_list:
+  - roundcube
