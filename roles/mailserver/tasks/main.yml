@@ -1,0 +1,7 @@
+---
+# tasks file for mailserver
+- name: include task list to install packages
+  import_tasks: packages.yml
+
+- name: include task list to configure packages
+  import_tasks: config.yml

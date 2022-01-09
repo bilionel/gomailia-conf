@@ -1,0 +1,18 @@
+---
+# defaults file for mailserver
+
+ubuntu_packages_list:
+  - postfix
+  - postfix-mysql
+  - postfix-tls
+  - postfix-admin
+  - mysql-client
+  - dovecot-imapd
+  - dovecot-pop3d
+  - dovecot-sieve
+  - dovecot-solr
+  - dovecot-antispam
+  - libsasl2
+  - libsasl2-modules
+  - libsasl2-modules-sql
+  - openssl
