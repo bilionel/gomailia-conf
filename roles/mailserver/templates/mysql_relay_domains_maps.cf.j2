@@ -1,0 +1,9 @@
+
+user = {{ dabase_rw_user }}
+password = {{ dabase_rw_password }}
+hosts = {{ database_host }}
+dbname = {{ database_name }}
+table = {{ database_relay_domain_table }}
+select_field = {{ relay_domain_select_field }}
+where_field = {{ relay_domain_where_field }}
+additional_conditions = and backupmx = '1'
