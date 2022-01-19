@@ -1,2 +1,8 @@
 ---
 # tasks file for mailadmin
+
+- name: install packages
+  import_tasks: packages.yml
+
+- name: configure application
+  import_tasks: config.yml
