@@ -4,15 +4,38 @@
 ubuntu_packages_list:
   - postfix
   - postfix-mysql
-  - postfix-tls
-  - postfix-admin
-  - mysql-client
+  - mariadb-client
   - dovecot-imapd
   - dovecot-pop3d
   - dovecot-sieve
   - dovecot-solr
   - dovecot-antispam
-  - libsasl2
   - libsasl2-modules
   - libsasl2-modules-sql
   - openssl
+
+map_configuration_files_list:
+  - mysql_virtual_alias_maps.cf
+  - mysql_virtual_domains_maps.cf
+  - mysql_virtual_mailbox_maps.cf
+  - mysql_virtual_mailbox_limit_maps.cf
+  - mysql_relay_domains_maps.cf
+postfix_config_directory: /etc/postfix/
+
+
+database_name: postfix
+database_alias_table: alias
+database_domain_table: domain
+database_mailbox_table: mailbox
+database_quota_table: mailbox
+database_relay_domain_table: domain
+alias_select_field: goto
+alias_where_field: address
+domain_select_field: domain
+domain_where_field: domain
+mailbox_select_field: maildir
+mailbox_where_field: username
+quota_select_field: quota
+quota_where_field: username
+relay_domain_select_field: domain
+relay_domain_where_field: domain
