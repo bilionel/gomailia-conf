@@ -1,0 +1,6 @@
+---
+
+database_host: terraform-20220116153145879900000001.ckq9bdzsnswb.us-east-2.rds.amazonaws.com
+database_name: postfix
+database_creation_script: postfixdb.sql
+database_login_path: remote
