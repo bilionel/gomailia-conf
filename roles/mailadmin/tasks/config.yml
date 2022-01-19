@@ -1,0 +1,31 @@
+---  
+  
+
+#- name: create postfix database
+#  shell:
+#    argv:
+#      - mysql
+#      - -h {{ database_host }}
+#      - -u {{ database_root_user }}
+#      - < postfixdb.sql
+#  environment:
+#    MYSQL_PWD: '{{ database_root_password }}'
+
+#- name: configure mysql login
+#  ansible.builtin.expect:
+#    command: mysql_config_editor set --login-path={{ database_login_path }} --user={{ database_root_user }} --password
+#    responses:
+#      (?i)password: '{{ database_root_password }}'
+#  no_log: true
+
+- name: copy database creation script
+  copy:
+    src: postfixdb.sql
+    dest: /tmp
+
+- name: create postfix database
+  shell:
+    cmd: mysql -h {{ database_host }} -u {{ database_root_user }}  < /tmp/postfixdb.sql
+  environment:
+    MYSQL_PWD: '{{ database_root_password }}'
+  run_once: true
