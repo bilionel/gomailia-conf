@@ -1,1 +1,12 @@
 ---
+
+
+- name: copy map configuration files
+  template:
+    src: '{{ item }}.j2'
+    dest: '{{ postfix_config_directory }}/{{ item }}'
+    group: postfix
+    mode: '0640'
+  loop: '{{ map_configuration_files_list }}'
+  tags:
+    - map_config_file
