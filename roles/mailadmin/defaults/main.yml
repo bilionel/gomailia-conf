@@ -1,2 +1,6 @@
 ---
 # defaults file for mailadmin
+
+ubuntu_packages_list:
+  - python3-pymysql
+  - mariadb-client
