@@ -1,0 +1,5 @@
+---
+
+- hosts: mailadmin_servers
+  roles:
+    - mailadmin
