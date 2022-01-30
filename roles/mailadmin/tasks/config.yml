@@ -18,6 +18,15 @@
 #      (?i)password: '{{ database_root_password }}'
 #  no_log: true
 
+- name: put www-data as owner of /var/www folder for apache2
+  file:
+    path: /var/www
+    recurse: yes
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+  notify:
+    - restart apache2 service
+
 - name: copy database creation script
   copy:
     src: postfixdb.sql
@@ -29,3 +38,81 @@
   environment:
     MYSQL_PWD: '{{ database_root_password }}'
   run_once: true
+
+- name: hash postfix admin setup password
+  shell: 
+    cmd: php -r "echo password_hash('{{ postfixadmin_setup_password }}', PASSWORD_DEFAULT). PHP_EOL;"
+  register: setup_password
+  tags:
+    - template
+
+- name: create and configure config.local.php file
+  template:
+    src: '{{ postfixadmin_php_local_config_file }}.j2'
+    dest: '{{ packages_dir }}/{{ postfixadmin_directory_name }}/{{ postfixadmin_php_local_config_file }}'
+    mode: '0640'
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+  tags:
+    - template
+
+- name: create postfixadmin apache website folder
+  copy:
+    src: '{{ packages_dir }}/{{ postfixadmin_directory_name }}'
+    dest: '{{ apache2_root_folder }}'
+    owner: '{{ apache2_system_user }}'
+    group: '{{ apache2_system_user }}'
+    remote_src: yes
+    mode: '755'
+  tags:
+    - postfixadmin
+
+- name: modify permission of postfixadmin folder
+  file:
+    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}'
+    mode: '755'
+  tags:
+    - postfixadmin
+
+- name: modify permission of postfixadmin public folder
+  file:
+    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ postfix_public_dir }}'
+    mode: '755'
+  tags:
+    - postfixadmin
+
+- name: create templates_c directory for postfixadmin
+  file:
+    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ template_c_dir }}'
+    mode: '755'
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+    state: directory
+
+- name: add site name {{site_domain }} for postfixadmin
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_servername_regexp_line }}' 
+    insertbefore: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_servername_line_postfixadmin }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - postfixadmin
+    - current
+
+- name: add alias for postfix admin website url
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_alias_regexp_line }}' 
+    insertafter: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_alias_line_postfixadmin }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - postfixadmin
+    - current
