@@ -1,2 +1,8 @@
 ---
 # handlers file for mailadmin
+
+- name: restart apache2 service
+  service:
+    name: apache2
+    state: restarted
+    enabled: yes
