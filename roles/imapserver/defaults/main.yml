@@ -1,0 +1,91 @@
+---
+# defaults file for imapserver
+
+
+ubuntu_packages_list:
+  - dovecot-imapd 
+  - dovecot-pop3d
+  - dovecot-sieve
+  - dovecot-antispam
+  - dovecot-lmtpd
+  - dovecot-mysql
+  - dovecot-submissiond
+  - certbot
+
+enabled_protocols: imap pop3 lmtp
+
+vmail_system_user: mail
+mail_directory: /emails
+mail_directoryname: Maildir
+dovecot_user: dovecot
+mail_system_group: mail 
+lmtp_service_target_conf: |
+  service lmtp {
+   inet_listener lmtp {
+      address = {{ inventory_hostname }} 127.0.0.1 ::1
+      port = 24
+   }
+  }
+auth_service_target_conf: |
+  service auth {
+    inet_listener {
+      port = 12345
+    }
+  }
+dovecot_main_config_file: /etc/dovecot/dovecot.conf
+dovecot_mailbox_namespace_config_file: /etc/dovecot/conf.d/10-mail.conf
+dovecot_config_folder: /etc/dovecot/conf.d
+dovecot_master_config_file_name: 10-master.conf
+dovecot_submission_config_file_name: 20-submission.conf
+dovecot_master_config_file: /etc/dovecot/conf.d/10-master.conf
+dovecot_auth_config_file: /etc/dovecot/conf.d/10-auth.conf
+dovecot_sql_conf_file: /etc/dovecot/dovecot-sql.conf.ext
+dovecot_ssl_conf_file: /etc/dovecot/conf.d/10-ssl.conf
+letsencrypt_cert_folder: /etc/letsencrypt/archive/
+postfix_database_name: postfix
+dovecot_user_id: 114
+dovecot_group_id: 122
+
+dovecot_sql_target_conf: |
+  driver = mysql
+
+  connect = host={{ database_host }} dbname={{ postfix_database_name }} user={{ postfix_database_rw_user }} password={{ postfix_database_rw_password }}
+
+  default_pass_scheme = MD5-CRYPT
+
+  password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
+
+  user_query = SELECT maildir, {{ getent_passwd[dovecot_user].1 }} AS uid, {{ getent_passwd[dovecot_user].2 }} AS gid FROM mailbox WHERE username = '%u' AND active='1'
+
+  iterate_query = SELECT username AS user FROM mailbox
+
+
+# ports
+service_auth_port: 12345
+lmtp_port: 24
+submission_port: 587
+pop3s_login_port: 995
+pop3_login_port: 110
+imaps_login_port: 993
+imap_login_port: 143
+SMPT_port: 25
+
+dovecot_first_valid_uid: 100
+
+site_imap_domain: imap.gomail.life
+cert_folder_path: /etc/pki/cert/
+private_cert_folder_name: private
+account_key_file_name: account.key
+csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
+csr_file_name: '{{ site_imap_domain }}.csr' 
+acme_diretory_url: https://acme-v02.api.letsencrypt.org/directory
+countryname: CM
+organizationname: gomailia
+organizationalunitname: mailservice
+support_email: blionnel15@gmail.com
+challenge_directory: .well-known/acme-challenge
+lib_services_folder: /lib/systemd/system
+apache_service_name: apache2.service
+dovecot_ssl_target_config:
+  - {from: '^ssl_cert =', to: 'ssl_cert = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/fullchain1.pem'}
+  - {from: '^ssl_key =', to: 'ssl_key = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/privkey1.pem'}
