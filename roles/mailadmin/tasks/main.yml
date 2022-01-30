@@ -4,5 +4,5 @@
 - name: install packages
   import_tasks: packages.yml
 
-- name: configure application
+- name: configure applications
   import_tasks: config.yml
