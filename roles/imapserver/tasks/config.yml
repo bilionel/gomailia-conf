@@ -1,0 +1,286 @@
+---
+
+- name: enable imap pop3 imaps pop3s protocols in dovecot
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_main_config_file }}'
+    regexp: '^protocols ='
+    insertafter: '!include_try /usr/share/dovecot/protocols.d'
+    line: protocols = {{ enabled_protocols }}
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_configuration
+    - current_tasks
+
+- name: create mail directory for dovecot
+  file:
+    path: '{{ mail_directory }}'
+    group: '{{ dovecot_user }}'
+    owner: '{{ dovecot_user }}'
+    state: directory
+
+- name: specify mailbox directory in dovecot
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_mailbox_namespace_config_file }}'
+    regexp: '^mail_location = '
+    line: mail_location = maildir:{{ mail_directory }}/%d/%n/{{ mail_directoryname }}
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_configuration
+  
+- name: specify mail privileged group in dovecot
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_mailbox_namespace_config_file }}'
+    regexp: '^mail_privileged_group = '
+    line: mail_privileged_group = {{ vmail_system_user }}
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_configuration
+
+
+- name: add dovecot user to mail group
+  user:
+    name: '{{dovecot_user}}'
+    groups: 
+      - '{{ mail_system_group }}'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_configuration
+
+- name: add auth user format in dovecot auth conf file
+  lineinfile:
+    backup: yes
+    regexp: 'auth_username_format = %u' 
+    insertafter: '^#auth_username_format ='
+    line: 'auth_username_format = %u'
+    path: '{{ dovecot_auth_config_file}}'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_configuration
+
+- name: add PLAIN auth mecanism in dovecot auth conf file
+  lineinfile:
+    backup: yes
+    regexp: '^auth_mechanisms ='
+    line: 'auth_mechanisms = plain login'
+    path: '{{ dovecot_auth_config_file}}'
+  notify:
+    - restart dovecot service
+  tags:
+    - current_tasks
+
+- name: enable dovecot to query user info on MySQL/MariaDB
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_auth_config_file }}'
+    regexp: '!include auth-sql.conf.ext' 
+    insertafter: '^#!include auth-sql.conf.ext'
+    line: '!include auth-sql.conf.ext'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_auth_service
+
+- name: disable dovecot to query local linux user database
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_auth_config_file }}'
+    regexp: '^!include auth-system.conf.ext'
+    line: '#!include auth-system.conf.ext'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_auth_service
+
+- name: add configuration to debug login issues
+  lineinfile:
+    backup: yes
+    path: '{{ dovecot_auth_config_file }}'
+    line: '{{ item }}'
+  with_items:
+      - 'auth_debug = yes'
+      - 'auth_debug_passwords = yes'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_debug
+  
+- name: Get dovecot system user '{{ dovecot_user }}' info
+  getent:
+    database: passwd
+    key: '{{ dovecot_user }}'
+  tags:
+    - imap_db_config
+
+- name: add MySQL/MariaDB database configuration to dovecot service
+  blockinfile:
+    backup: yes
+    path: '{{ dovecot_sql_conf_file }}'
+    block: '{{ dovecot_sql_target_conf }}'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_db_config
+
+- name: copy dovecot master template configuration file
+  template:
+    src: '{{ dovecot_master_config_file_name }}.j2'
+    dest: '{{ dovecot_config_folder }}/{{ dovecot_master_config_file_name }}'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_master_conf
+
+- name: copy dovecot submission template configuration file
+  template:
+    src: '{{ dovecot_submission_config_file_name }}.j2'
+    dest: '{{ dovecot_config_folder }}/{{ dovecot_submission_config_file_name }}'
+  notify:
+    - restart dovecot service
+  tags:
+    - imap_master_conf
+
+- name: change first valid uid for dovecot
+  lineinfile:
+    path: '{{ dovecot_mailbox_namespace_config_file }}'
+    regexp: '^first_valid_uid ='
+    line: 'first_valid_uid = {{ dovecot_first_valid_uid }}'
+    backup: yes
+  notify:
+    - restart dovecot service
+
+- name: Check if apache service is present on system
+  stat: 
+    path: '{{lib_services_folder}}/{{ apache_service_name }}'
+  register: service_status
+  tags:
+    - cert
+
+- name: stop apache service
+  service:
+    name: '{{ apache_service_name }}'
+    state: stopped
+  when: service_status.stat.exists
+  notify:
+    - restart apache service
+  tags:
+    - cert
+
+- name: generate certificate for dovecot services
+  shell:
+    cmd: > 
+      certbot
+      certonly
+      --standalone
+      --non-interactive
+      --agree-tos
+      -m {{ support_email }}
+      -d {{ site_imap_domain }}
+  args:
+    chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+  tags:
+    - current_tasks
+    - cert
+
+- name: configure dovecot to use ssl certificate
+  lineinfile:
+    path: '{{ dovecot_ssl_conf_file }}'
+    regexp: '{{ item.from }}'
+    line: '{{item.to}}'
+  with_items: '{{ dovecot_ssl_target_config }}'
+  notify:
+    - restart dovecot service
+  tags:
+    - cert
+#- name: create directory for certificate key
+#  file:
+#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+#    group: '{{ dovecot_user }}'
+#    owner: '{{ dovecot_user }}'
+#    state: directory
+#    recurse: yes
+#  tags:
+#    - ssl
+#
+#- name: create acount key for ACME directory
+#  community.crypto.openssl_privatekey:
+#    backup: yes
+#    curve: secp384r1
+#    group: '{{ dovecot_user }}'
+#    owner: '{{ dovecot_user }}'
+#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+#  tags:
+#      - ssl
+#
+#- name: create key for csr request of dovecot
+#  community.crypto.openssl_privatekey:
+#    backup: yes
+#    curve: secp384r1
+#    group: '{{ dovecot_user }}'
+#    owner: '{{ dovecot_user }}'
+#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
+#  tags:
+#      - ssl
+#
+#- name: create csr file for {{ site_imap_domain }}
+#  community.crypto.openssl_csr:
+#    backup: yes
+#    common_name: '{{ site_imap_domain }}'
+#    country_name: '{{ countryname }}'
+#    organization_name: '{{ organizationname }}'
+#    organizational_unit_name: '{{ organizationalunitname }}'
+#    email_address: '{{ support_email }}'
+#    privatekey_path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
+#    group: '{{ dovecot_user }}'
+#    owner: '{{ dovecot_user }}'
+#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+#  tags:
+#      - ssl
+#
+#- name: Create a challenge for {{ site_imap_domain }} using an account key file.
+#  community.crypto.acme_certificate:
+#    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+#    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+#    fullchain_dest: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ site_imap_domain }}.crt'
+#    acme_version: 2
+#    acme_directory: '{{ acme_diretory_url }}'
+#    terms_agreed: yes
+#  register: sample_com_challenge
+#  tags:
+#      - ssl
+#
+#- name: create acme challenge directories
+#  file:
+#    path: "{{ cert_folder_path }}/{{ challenge_directory }}"
+#    state: directory
+#  tags:
+#    - ssl
+#   
+#
+#- name: fulfill challenge to generate certificate
+#  copy:
+#    dest: "{{ cert_folder_path }}/{{ sample_com_challenge['challenge_data'][site_imap_domain]['http-01']['resource'] }}"
+#    content: "{{ sample_com_challenge['challenge_data'][site_imap_domain]['http-01']['resource_value'] }}"
+#  when: sample_com_challenge is changed and  site_imap_domain in sample_com_challenge['challenge_data']
+#  tags:
+#    - ssl
+#
+#- name: Create a certificate for {{ site_imap_domain }} site using an account key file.
+#  community.crypto.acme_certificate:
+#    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+#    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+#    fullchain_dest: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ site_imap_domain }}.crt'
+#    acme_version: 2
+#    acme_directory: '{{ acme_diretory_url }}'
+#    data: '{{ sample_com_challenge }}'
+#    terms_agreed: yes
+#    challenge: tls-alpn-01
+#  tags:
+#    - ssl
