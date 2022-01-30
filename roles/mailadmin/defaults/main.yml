@@ -2,5 +2,32 @@
 # defaults file for mailadmin
 
 ubuntu_packages_list:
-  - python3-pymysql
-  - mariadb-client
+  - php-cli
+
+packages_dir: /packages
+postfix_public_dir: public
+template_c_dir: templates_c
+postfixadmin_directory_name: emailadmin
+postfixadmin_version: postfixadmin-3.3.10
+postfixadmin_repository: https://github.com/postfixadmin/postfixadmin.git
+postfixadmin_webfolder: /var/www/html/{{ postfixadmin_directory_name }}
+
+
+database_type: mysqli
+postfix_database_name: postfix
+postfixadmin_root_folder: /packages/postfixadmin
+postfixadmin_php_local_config_file: config.local.php
+
+postfix_password_encryption_protocol: md5crypt
+
+site_domain: www.gomail.life
+countryname: CM
+support_email: blionnel15@gmail.com
+organizationname: gomailia
+organizationalunitname: mailservice
+
+apache2_alias_regexp_line: '        Alias /{{ postfixadmin_directory_name }}'
+apache2_servername_regexp_line: '        ServerName '
+apache2_servername_line_postfixadmin: '        ServerName {{ site_domain }}'
+apache2_alias_line_postfixadmin: '        Alias /{{ postfixadmin_directory_name }} {{ postfixadmin_webfolder }}/{{ postfix_public_dir }}'
+ 
