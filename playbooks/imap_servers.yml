@@ -1,0 +1,5 @@
+---
+
+- hosts: imap_servers
+  roles:
+    - imapserver
