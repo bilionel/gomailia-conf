@@ -9,3 +9,6 @@ ec2-3-142-247-108.us-east-2.compute.amazonaws.com ansible_user=ubuntu
 
 [mailadmin_servers]
 ec2-3-142-247-108.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+
+[imap_servers]
+ec2-3-142-247-108.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
