@@ -1,0 +1,14 @@
+---
+# handlers file for imapserver
+
+- name: restart dovecot service
+  service:
+    name: dovecot
+    state: restarted
+    enabled: yes
+
+- name: restart apache service
+  service:
+    name: apache
+    state: restarted
+    enabled: yes
