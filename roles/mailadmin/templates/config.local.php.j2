@@ -1,0 +1,10 @@
+<?php
+$CONF['database_type'] = '{{ database_type }}';
+$CONF['database_host'] = '{{ database_host }}';
+$CONF['database_user'] = '{{ postfix_database_rw_user }}';
+$CONF['database_password'] = '{{ postfix_database_rw_password }}';
+$CONF['database_name'] = '{{ postfix_database_name }}';
+$CONF['configured'] = true;
+$CONF['setup_password'] = '{{ setup_password.stdout }}';
+$CONF['encrypt'] = '{{ postfix_password_encryption_protocol }}';
+?>
