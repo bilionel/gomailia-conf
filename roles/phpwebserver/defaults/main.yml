@@ -1,0 +1,40 @@
+---
+# defaults file for phpwebserver
+
+phpwebserver_packages_list:
+  - mariadb-client
+  - python3-pymysql
+  - apache2
+  - libapache2-mod-php
+  - php
+  - php-imap
+  - php-mysql
+  - php-mbstring
+  - php-curl
+  - php-ldap
+  - php-imagick
+  - php-zip
+  - python3-setuptools
+  - pip
+
+apache2_root_folder: /var/www/html
+apache2_site_available_folder: sites-available
+apache2_site_available: '{{ apache2_conf_folder }}/{{ apache2_site_available_folder }}'
+apache2_conf_folder: /etc/apache2
+apache2_system_user: www-data
+private_cert_folder_name: private
+apache2_conf_document_root_line: '^\s*DocumentRoot'
+apache2_default_http_config_file: 000-default.conf
+apache2_default_https_config_file: '{{ apache2_default_https_site }}.conf'
+apache2_default_https_site: default-ssl
+
+challenge_directory: .well-known/acme-challenge
+acme_diretory_url: https://acme-v02.api.letsencrypt.org/directory
+
+cert_folder_path: /etc/pki/cert
+account_key_file_name: account.key
+csr_key_file_name :  '{{ site_domain }}.key'
+csr_file_name: '{{ site_domain }}.csr'
+apache2_target_cert_conf:
+  - { from: '^\s*SSLCertificateFile', to: '                SSLCertificateFile      {{ apache2_conf_folder }}/{{ site_domain }}.crt' }
+  - { from: '^\s*SSLCertificateKeyFile', to: '                SSLCertificateKeyFile      {{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}' }
