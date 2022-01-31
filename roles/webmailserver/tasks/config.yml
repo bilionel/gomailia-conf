@@ -1,0 +1,78 @@
+---
+
+
+- name: extract roundcube package archive
+  unarchive:
+    remote_src: yes
+    src: '{{ packages_folder }}/{{ roundcube_package }}'
+    dest:  '{{ packages_folder }}'
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_system_user }}'
+
+- name: create roundcube website directory
+  file:
+    path: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    state: directory
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_system_user }}'
+    recurse: yes
+
+- name: create roundcube website
+  copy:
+    remote_src: yes
+    src: '{{ packages_folder }}/{{ roundcube_extracted_folder_name }}'
+    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_system_user }}'
+
+- name: copy database creation script
+  copy:
+    src: createdb.sql
+    dest: /tmp
+
+- name: create roundcube database and database user
+  shell:
+    cmd: mysql -h {{ database_host }} -u {{ database_root_user }}  < /tmp/createdb.sql
+  environment:
+    MYSQL_PWD: '{{ database_root_password }}'
+  run_once: true 
+
+- name: change database initialization script
+  copy:
+    src: '{{ mysql_initialize_roundcube_script }}'
+    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
+    backup: yes
+  tags:
+    - current_tasks
+
+- name: intialize roundcube database
+  shell:
+    cmd: mysql -h {{ database_host }} -u {{ database_rw_user }}  {{ database_name }} < {{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_initialize_db_script }}
+  environment:
+    MYSQL_PWD: '{{ database_rw_password }}'
+  run_once: true
+  tags:
+    - current_tasks
+
+- name: set php data.timezone
+  lineinfile:
+    path: '{{ php_config_file }}'
+    insertafter: ';date.timezone ='
+    line: 'date.timezone = {{ time_zone }}'
+  notify:
+    - restart apache2 service
+
+
+- name: add site name {{site_domain }} for webmail server
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_servername_regexp_line }}' 
+    insertbefore: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_servername_line_postfixadmin }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - postfixadmin
+    - current
