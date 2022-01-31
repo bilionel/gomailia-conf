@@ -6,3 +6,12 @@
     name: "{{ item }}"
     state: present
   loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - packages
+
+- name: download roundcube package
+  get_url:
+    dest: '{{ packages_folder }}'
+    url: '{{ roundcube_download_url }}'
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_system_user }}'
