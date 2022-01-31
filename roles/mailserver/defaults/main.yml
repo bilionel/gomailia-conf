@@ -5,25 +5,27 @@ ubuntu_packages_list:
   - postfix
   - postfix-mysql
   - mariadb-client
-  - dovecot-imapd
-  - dovecot-pop3d
-  - dovecot-sieve
-  - dovecot-solr
-  - dovecot-antispam
   - libsasl2-modules
   - libsasl2-modules-sql
   - openssl
 
+virtual_alias_conf_file: mysql_virtual_alias_maps.cf
+virtual_domain_conf_file: mysql_virtual_domains_maps.cf
+virtual_mailbox_conf_file: mysql_virtual_mailbox_maps.cf
+virtual_mailbox_limit_conf_file: mysql_virtual_mailbox_limit_maps.cf
+relay_domains_maps_conf_file: mysql_relay_domains_maps.cf
+
 map_configuration_files_list:
-  - mysql_virtual_alias_maps.cf
-  - mysql_virtual_domains_maps.cf
-  - mysql_virtual_mailbox_maps.cf
-  - mysql_virtual_mailbox_limit_maps.cf
-  - mysql_relay_domains_maps.cf
+  - '{{ virtual_alias_conf_file }}'
+  - '{{ virtual_domain_conf_file }}'
+  - '{{ virtual_mailbox_conf_file }}'
+  - '{{ virtual_mailbox_limit_conf_file }}'
+  - '{{ relay_domains_maps_conf_file }}'
+
 postfix_config_directory: /etc/postfix/
 
 
-database_name: postfix
+postfix_database_name: postfix
 database_alias_table: alias
 database_domain_table: domain
 database_mailbox_table: mailbox
@@ -39,3 +41,54 @@ quota_select_field: quota
 quota_where_field: username
 relay_domain_select_field: domain
 relay_domain_where_field: domain
+
+vmail_system_user: vmail
+vmail: test
+vmail_groups: 
+  - sasl
+
+virtual_mailbox_domain_settings: |
+  # Virtual Mailbox Domain Settings
+
+  virtual_alias_maps = mysql:/etc/postfix/{{ virtual_alias_conf_file }}
+  virtual_mailbox_domains = mysql:/etc/postfix/{{ virtual_domain_conf_file }}
+  virtual_mailbox_maps = mysql:/etc/postfix/{{ virtual_mailbox_conf_file }}
+  virtual_mailbox_limit = 51200000
+  virtual_minimum_uid = {{ system_virtual_minimum_uid }}
+  virtual_uid_maps = static:{{ getent_passwd[vmail_system_user].1 }}
+  virtual_gid_maps = static:{{ getent_passwd[vmail_system_user].2 }}
+  virtual_mailbox_base = /home/{{ vmail_system_user }}
+  virtual_transport = virtual
+
+quota_support_settings: |
+  # Additional for quota support
+  
+  virtual_create_maildirsize = yes
+  virtual_mailbox_extended = yes
+  virtual_mailbox_limit_maps = mysql:/etc/postfix/{{ virtual_mailbox_limit_conf_file }}
+  virtual_mailbox_limit_override = yes
+  virtual_maildir_limit_message = Sorry, the your maildir has overdrawn your diskspace quota, please free up some of spaces of your mailbox try again.
+  virtual_overquota_bounce = yes
+system_virtual_minimum_uid: 1000
+postfix_config_file: /etc/postfix/main.cf
+postfix_master_config_file: /etc/postfix/master.cf
+mailserver_hostname: ec2-3-142-247-108.us-east-2.compute.amazonaws.com
+
+enable_submission_service_line:
+  from: '^#submission inet n       -       y       -       -       smtpd' 
+  to: 'submission inet n       -       y       -       -       smtpd'
+
+lmtp_port: 24
+dovecot_auth_port: 12345
+
+letsencrypt_cert_folder: /etc/letsencrypt/archive/
+site_smtp_domain: smtp.gomail.life
+cert_folder_path: /etc/pki/cert/
+private_cert_folder_name: private
+csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
+support_email: blionnel15@gmail.com
+lib_services_folder: /lib/systemd/system
+apache_service_name: apache2.service
+smtp_tls_target_config:
+  - {from: '^smtpd_tls_cert_file=', to: 'smtpd_tls_cert_file={{ letsencrypt_cert_folder }}/{{ site_smtp_domain }}/fullchain1.pem'}
+  - {from: '^smtpd_tls_key_file=', to: 'smtpd_tls_key_file={{ letsencrypt_cert_folder }}/{{ site_smtp_domain }}/privkey1.pem'}
