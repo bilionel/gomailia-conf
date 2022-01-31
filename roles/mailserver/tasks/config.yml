@@ -8,5 +8,138 @@
     group: postfix
     mode: '0640'
   loop: '{{ map_configuration_files_list }}'
+  notify:
+    - restart postfix service
   tags:
     - map_config_file
+
+
+- name: create virtual mail system group
+  group:
+    name: '{{ vmail_system_user }}'
+    state: present
+  tags:
+    - create_user
+
+- name: create virtual mail system user
+  user:
+    name: '{{ vmail_system_user }}'
+    group: '{{ vmail_system_user }}'
+    groups: '{{ vmail_groups }}'
+    home: /home/{{ vmail_system_user }}
+  tags:
+    - create_user
+
+- name: Get postfix system user '{{ vmail_system_user }}' user info
+  getent:
+    database: passwd
+    key: '{{ vmail_system_user }}'
+  tags:
+    - current_tasks
+
+- name: configure postfix with mysql maps
+  blockinfile:
+    path: '{{ postfix_config_file }}'
+    block: |
+      {{ virtual_mailbox_domain_settings }}
+      {{ quota_support_settings }}
+  notify:
+    - restart postfix service
+  tags:
+    - configure_postfix
+    - current_tasks
+
+- name: configure spectific parameter of postfix
+  lineinfile:
+    path: '{{ postfix_config_file }}'
+    regexp: '^myhostname ='
+    line: myhostname = {{ mailserver_hostname }}
+  tags:
+    - configure_postfix
+  notify: 
+    - restart postfix service
+
+- name: modify postfix main config file for dovecot lmtp
+  lineinfile:
+    regexp: '{{ item }}' 
+    path: '{{ postfix_config_file }}'
+    line: '{{ item }}'
+    backup: yes
+  with_items:
+    - 'virtual_transport = lmtp:{{ inventory_hostname }}:{{ lmtp_port }}'
+    - 'smtputf8_enable = no'
+  notify:
+    - restart postfix service
+  tags:
+    - imap_lmtp_service
+
+- name: modify postfix main config file for dovecot auth service
+  lineinfile:
+    regexp: '{{ item }}'
+    path: '{{ postfix_config_file }}'
+    line: '{{ item }}'
+    backup: yes
+  with_items:
+    - 'smtpd_sasl_path = inet:{{ inventory_hostname }}:{{ dovecot_auth_port }}'
+    - 'smtpd_sasl_type = dovecot'
+    - 'smtpd_sasl_auth_enable = yes'
+    - 'default_transport = smtp'
+  notify:
+    - restart postfix service
+  tags:
+    - imap_auth_service
+
+- name: enable submission service on postfix
+  lineinfile:
+    path: '{{ postfix_master_config_file }}'
+    regexp: '{{ enable_submission_service_line.from }}'
+    line: '{{ enable_submission_service_line.to }}'
+    backup: yes
+  notify:
+    - restart postfix service
+  tags:
+    - postfix_system_user
+
+- name: Check if apache service is present on system
+  stat: 
+    path: '{{lib_services_folder}}/{{ apache_service_name }}'
+  register: service_status
+  tags:
+    - cert
+
+- name: stop apache service
+  service:
+    name: '{{ apache_service_name }}'
+    state: stopped
+  when: service_status.stat.exists
+  notify:
+    - restart apache service
+  tags:
+    - cert
+
+- name: generate certificate for dovecot services
+  shell:
+    cmd: > 
+      certbot
+      certonly
+      --standalone
+      --non-interactive
+      --agree-tos
+      -m {{ support_email }}
+      -d {{ site_smtp_domain }}
+  args:
+    chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+  tags:
+    - current_tasks
+    - cert
+
+- name: configure smtp service with tls
+  lineinfile:
+    path: '{{ postfix_config_file }}'
+    regexp: '{{ item.from }}'
+    line: '{{ item.to }}'
+  with_items: '{{ smtp_tls_target_config }}'
+  notify:
+    - restart postfix service
+  tags:
+    - cert
