@@ -1,4 +1,25 @@
 ---
 # defaults file for webmailserver
-ubuntu_packages_list:
-  - roundcube
+ubuntu_packages_list: []
+
+
+roundcube_download_url: https://github.com/roundcube/roundcubemail/releases/download/1.5.2/roundcubemail-1.5.2-complete.tar.gz
+packages_folder: /packages
+webmail_system_user: www-data
+roundcube_extracted_folder_name: roundcubemail-1.5.2/
+roundcube_folder_name: roundcubemail
+roundcube_sql_script_folder: SQL
+roundcube_package: roundcubemail-1.5.2-complete.tar.gz
+
+apache2_web_directory: /var/www/html
+roundcube_initialize_db_script: SQL/mysql.initial.sql
+php_config_file: /etc/php/7.4/apache2/php.ini
+database_name: roundcubemail
+time_zone: Africa/Douala
+mysql_initialize_roundcube_script: mysql.initial.sql
+
+site_domain: www.gomail.life
+
+
+apache2_servername_regexp_line: '        ServerName '
+apache2_servername_line_postfixadmin: '        ServerName {{ site_domain }}'
