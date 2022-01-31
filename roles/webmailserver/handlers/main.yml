@@ -1,2 +1,8 @@
 ---
 # handlers file for webmailserver
+
+- name: restart apache2 service
+  service:
+    name: apache2
+    enabled: yes
+    state: restarted
