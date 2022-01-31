@@ -1,0 +1,150 @@
+---
+
+- name: create directory for certificate key
+  file:
+    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+    state: directory
+    recurse: yes
+  tags:
+    - ssl
+
+- name: create acount key for ACME directory
+  community.crypto.openssl_privatekey:
+    backup: yes
+    curve: secp384r1
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+  tags:
+      - ssl
+
+- name: create key for csr request
+  community.crypto.openssl_privatekey:
+    backup: yes
+    curve: secp384r1
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
+  tags:
+      - ssl
+
+- name: create csr file for {{ site_domain }}
+  community.crypto.openssl_csr:
+    backup: yes
+    common_name: '{{ site_domain }}'
+    country_name: '{{ countryname }}'
+    organization_name: '{{ organizationname }}'
+    organizational_unit_name: '{{ organizationalunitname }}'
+    email_address: '{{ support_email }}'
+    privatekey_path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
+    group: '{{ apache2_system_user }}'
+    owner: '{{ apache2_system_user }}'
+    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+  tags:
+      - ssl
+
+- name: Create a challenge for {{ site_domain }} using an account key file.
+  community.crypto.acme_certificate:
+    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+    fullchain_dest: '{{ apache2_conf_folder }}/{{ site_domain }}.crt'
+    acme_version: 2
+    acme_directory: '{{ acme_diretory_url }}'
+    terms_agreed: yes
+  register: sample_com_challenge
+  tags:
+      - ssl
+
+- name: create acme challenge directories
+  file:
+    path: "{{ apache2_root_folder }}/{{ challenge_directory }}"
+    state: directory
+  tags:
+    - ssl 
+
+- name: fulfill challenge to generate certificate
+  copy:
+    dest: "{{ apache2_root_folder }}/{{ sample_com_challenge['challenge_data'][site_domain]['http-01']['resource'] }}"
+    content: "{{ sample_com_challenge['challenge_data'][site_domain]['http-01']['resource_value'] }}"
+  when: sample_com_challenge is changed and  site_domain in sample_com_challenge['challenge_data']
+  tags:
+      - ssl
+
+- name: Create a certificate for {{ site_domain }} site using an account key file.
+  community.crypto.acme_certificate:
+    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
+    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
+    fullchain_dest: '{{ apache2_conf_folder }}/{{ site_domain }}.crt'
+    acme_version: 2
+    acme_directory: '{{ acme_diretory_url }}'
+    data: '{{ sample_com_challenge }}'
+    terms_agreed: yes
+  tags:
+      - ssl
+
+#- name: copy configuration file for http default site
+#  template:
+#    src: '{{ apache2_default_http_config_file }}.j2'
+#    dest: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+#  notify:
+#    - restart apache2 service
+#  tags:
+#    - conf_apache
+#    - ssl
+
+#- name: copy configuration file for https default site
+#  template:
+#    src: '{{ apache2_default_https_config_file }}.j2'
+#    dest: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
+#  notify:
+#    - restart apache2 service
+#  tags:
+#    - conf_apache
+#    - ssl
+
+- name: enable ssl module on apache
+  apache2_module:
+    name: ssl
+    state: present
+  notify:
+    - restart apache2 service
+  tags:
+    - conf_apache
+    - ssl
+
+- name: enable https default site
+  shell:
+    cmd: a2ensite {{apache2_default_https_site}}
+  notify:
+    - restart apache2 service
+  tags:
+    - conf_apache
+    - ssl
+
+- name: change defaut certificate files for {{ site_domain }}
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ item.from }}' 
+    line: '{{ item.to }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
+  with_items: '{{ apache2_target_cert_conf }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - ssl
+
+- name: add redirect from http to https
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '^\s*Redirect permanent / ' 
+    insertafter: '^\s*ServerAdmin '
+    line: '        Redirect permanent / https://{{ site_domain }}/'
+    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - ssl
