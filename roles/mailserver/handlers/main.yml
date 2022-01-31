@@ -1,2 +1,8 @@
 ---
 # handlers file for mailserver
+
+- name: restart postfix service
+  service:
+    enabled: yes
+    name: postfix
+    state: restarted
