@@ -2,7 +2,9 @@
 # defaults file for mailadmin
 
 ubuntu_packages_list:
-  - php-cli
+  - php-ldap
+  - sldap
+  - ldap-utils
 
 packages_dir: /packages
 postfix_public_dir: public
