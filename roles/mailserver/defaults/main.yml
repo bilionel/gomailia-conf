@@ -3,24 +3,21 @@
 
 ubuntu_packages_list:
   - postfix
-  - postfix-mysql
-  - mariadb-client
+  - postfix-ldap
   - libsasl2-modules
-  - libsasl2-modules-sql
   - openssl
+  - certbot
 
-virtual_alias_conf_file: mysql_virtual_alias_maps.cf
-virtual_domain_conf_file: mysql_virtual_domains_maps.cf
-virtual_mailbox_conf_file: mysql_virtual_mailbox_maps.cf
-virtual_mailbox_limit_conf_file: mysql_virtual_mailbox_limit_maps.cf
-relay_domains_maps_conf_file: mysql_relay_domains_maps.cf
 
-map_configuration_files_list:
-  - '{{ virtual_alias_conf_file }}'
-  - '{{ virtual_domain_conf_file }}'
-  - '{{ virtual_mailbox_conf_file }}'
-  - '{{ virtual_mailbox_limit_conf_file }}'
-  - '{{ relay_domains_maps_conf_file }}'
+
+
+ldap_configuration_files_list:
+  - '{{ ldap_account_conf_file }}'
+  - '{{ ldap_accountmap_conf_file }}'
+  - '{{ ldap_aliases_conf_file }}'
+  - '{{ ldap_transport_conf_file }}'
+  - '{{ ldap_vacation_conf_file }}'
+  - '{{ ldap_virtualforward_conf_file }}'
 
 postfix_config_directory: /etc/postfix/
 
@@ -50,29 +47,35 @@ vmail_groups:
 virtual_mailbox_domain_settings: |
   # Virtual Mailbox Domain Settings
 
-  virtual_alias_maps = mysql:/etc/postfix/{{ virtual_alias_conf_file }}
-  virtual_mailbox_domains = mysql:/etc/postfix/{{ virtual_domain_conf_file }}
-  virtual_mailbox_maps = mysql:/etc/postfix/{{ virtual_mailbox_conf_file }}
+  # transport_maps
+  maildrop_destination_concurrency_limit = 2 
+  maildrop_destination_recipient_limit = 1
+  gnarwl_destination_concurrency_limit = 1 
+  gnarwl_destination_recipient_limit = 1
+  transport_maps = hash:/etc/postfix/transport, ldap:{{ postfix_config_directory }}/{{ ldap_transport_conf_file }}
+
+  virtual_alias_maps = 
+    ldap:{{ postfix_config_directory }}/{{ ldap_aliases_conf_file }}
+    ldap:{{ postfix_config_directory }}/{{ ldap_virtualforward_conf_file }}
+    ldap:{{ postfix_config_directory }}/{{ ldap_accountmap_conf_file }}
+    
+  # virtual accounts for delivery
+  virtual_mailbox_base = /home/{{ vmail_system_user }}
+  virtual_mailbox_maps = ldap:{{ postfix_config_directory }}/{{ ldap_account_conf_file }}
+  local_recipient_maps = $alias_maps
+  recipient_bcc_maps = ldap:{{ postfix_config_directory }}/{{ ldap_vacation_conf_file }}
+
   virtual_mailbox_limit = 51200000
   virtual_minimum_uid = {{ system_virtual_minimum_uid }}
   virtual_uid_maps = static:{{ getent_passwd[vmail_system_user].1 }}
   virtual_gid_maps = static:{{ getent_passwd[vmail_system_user].2 }}
-  virtual_mailbox_base = /home/{{ vmail_system_user }}
   virtual_transport = virtual
 
-quota_support_settings: |
-  # Additional for quota support
-  
-  virtual_create_maildirsize = yes
-  virtual_mailbox_extended = yes
-  virtual_mailbox_limit_maps = mysql:/etc/postfix/{{ virtual_mailbox_limit_conf_file }}
-  virtual_mailbox_limit_override = yes
-  virtual_maildir_limit_message = Sorry, the your maildir has overdrawn your diskspace quota, please free up some of spaces of your mailbox try again.
-  virtual_overquota_bounce = yes
+
 system_virtual_minimum_uid: 1000
-postfix_config_file: /etc/postfix/main.cf
-postfix_master_config_file: /etc/postfix/master.cf
-mailserver_hostname: ec2-3-142-247-108.us-east-2.compute.amazonaws.com
+postfix_config_file: '{{ postfix_config_directory }}/main.cf'
+postfix_master_config_file: '{{ postfix_config_directory }}/master.cf'
+mailserver_hostname: '{{ site_smtp_domain }}'
 
 enable_submission_service_line:
   from: '^#submission inet n       -       y       -       -       smtpd' 
@@ -82,7 +85,7 @@ lmtp_port: 24
 dovecot_auth_port: 12345
 
 letsencrypt_cert_folder: /etc/letsencrypt/archive/
-site_smtp_domain: smtp.gomail.life
+site_smtp_domain: smtp.ldap.gomail.life
 cert_folder_path: /etc/pki/cert/
 private_cert_folder_name: private
 csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
@@ -92,3 +95,21 @@ apache_service_name: apache2.service
 smtp_tls_target_config:
   - {from: '^smtpd_tls_cert_file=', to: 'smtpd_tls_cert_file={{ letsencrypt_cert_folder }}/{{ site_smtp_domain }}/fullchain1.pem'}
   - {from: '^smtpd_tls_key_file=', to: 'smtpd_tls_key_file={{ letsencrypt_cert_folder }}/{{ site_smtp_domain }}/privkey1.pem'}
+
+# ldap variables
+ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
+ldap_server_port: 389
+ldap_protocol_version: 3
+ldap_vmail_user: vmail
+ldap_top_level_domain: life
+ldap_root_domain: gomail
+ldap_root_organization: hosting
+ldap_bin_dn_user: cn={{ ldap_vmail_user }},o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
+ldap_search_base_dn: o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
+
+ldap_account_conf_file: ldap-accounts.cf
+ldap_accountmap_conf_file: ldap-accounstmap.cf
+ldap_aliases_conf_file: ldap-aliases.cf
+ldap_transport_conf_file: ldap-transport.cf
+ldap_vacation_conf_file: ldap-vacation.cf
+ldap_virtualforward_conf_file: ldap-virtualforward.cf
