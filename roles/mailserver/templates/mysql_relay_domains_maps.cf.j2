@@ -1,9 +1,0 @@
-
-user = {{ postfix_database_rw_user }}
-password = {{ postfix_database_rw_password }}
-hosts = {{ database_host }}
-dbname = {{ postfix_database_name }}
-table = {{ database_relay_domain_table }}
-select_field = {{ relay_domain_select_field }}
-where_field = {{ relay_domain_where_field }}
-additional_conditions = and backupmx = '1'
