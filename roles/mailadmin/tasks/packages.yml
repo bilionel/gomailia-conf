@@ -12,13 +12,13 @@
     state: directory
     path: '{{ packages_dir }}'
   tags:
-    - postfixadmin
+    - install
   
-- name: download git repository for postfixadmin
+- name: download git repository for vmailpanel
   ansible.builtin.git:
-    repo: '{{ postfixadmin_repository }}'
-    dest: '{{ packages_dir }}/{{ postfixadmin_directory_name }}'
+    repo: '{{ mailadmin_repository }}'
+    dest: '{{ packages_dir }}/{{ mailadmin_directory_name }}'
 
-    version: '{{ postfixadmin_version }}'
+#    version: '{{ mailadmin_version }}'
   tags:
-    - postfixadmin
+    - install
