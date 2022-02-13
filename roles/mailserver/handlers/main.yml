@@ -6,3 +6,9 @@
     enabled: yes
     name: postfix
     state: restarted
+
+- name: restart apache service
+  service:
+    enabled: yes
+    name: apache2
+    state: restarted
