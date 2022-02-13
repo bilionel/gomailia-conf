@@ -7,7 +7,7 @@
     dest: '{{ postfix_config_directory }}/{{ item }}'
     group: postfix
     mode: '0640'
-  loop: '{{ map_configuration_files_list }}'
+  loop: '{{ ldap_configuration_files_list }}'
   notify:
     - restart postfix service
   tags:
@@ -20,6 +20,7 @@
     state: present
   tags:
     - create_user
+    - postfix_ldap
 
 - name: create virtual mail system user
   user:
@@ -29,6 +30,7 @@
     home: /home/{{ vmail_system_user }}
   tags:
     - create_user
+    - postfix_ldap
 
 - name: Get postfix system user '{{ vmail_system_user }}' user info
   getent:
@@ -36,18 +38,18 @@
     key: '{{ vmail_system_user }}'
   tags:
     - current_tasks
+    - - postfix_ldap
 
-- name: configure postfix with mysql maps
+- name: configure postfix with ldap maps
   blockinfile:
     path: '{{ postfix_config_file }}'
     block: |
       {{ virtual_mailbox_domain_settings }}
-      {{ quota_support_settings }}
   notify:
     - restart postfix service
   tags:
     - configure_postfix
-    - current_tasks
+    - postfix_ldap
 
 - name: configure spectific parameter of postfix
   lineinfile:
@@ -117,7 +119,7 @@
   tags:
     - cert
 
-- name: generate certificate for dovecot services
+- name: generate certificate for mailserver service
   shell:
     cmd: > 
       certbot
