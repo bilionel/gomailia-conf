@@ -1,0 +1,11 @@
+server_host = {{ ldap_server }}
+server_port = {{ ldap_server_port }}
+version = {{ ldap_protocol_version }}
+bind = yes
+start_tls = no
+bind_dn = {{ ldap_bin_dn_user }}
+bind_pw = {{ ldap_bin_dn_user_pass }}
+search_base = {{ ldap_search_base_dn }}
+scope = sub
+query_filter = (&(&(objectClass=VirtualMailAccount)(mail=%s))(forwardActive=FALSE)(accountActive=TRUE)(delete=FALSE))
+result_attribute = mailbox
