@@ -9,6 +9,7 @@ ubuntu_packages_list:
   - dovecot-antispam
   - dovecot-lmtpd
   - dovecot-mysql
+  - dovecot-ldap
   - dovecot-submissiond
   - certbot
 
@@ -35,6 +36,9 @@ auth_service_target_conf: |
 dovecot_main_config_file: /etc/dovecot/dovecot.conf
 dovecot_mailbox_namespace_config_file: /etc/dovecot/conf.d/10-mail.conf
 dovecot_config_folder: /etc/dovecot/conf.d
+dovecot_root_config_folder: /etc/dovecot
+dovecot_ldap_config_file_name: dovecot-ldap.conf.ext
+dovecot_15_lda_conf_file_name: 15-lda.conf
 dovecot_master_config_file_name: 10-master.conf
 dovecot_submission_config_file_name: 20-submission.conf
 dovecot_master_config_file: /etc/dovecot/conf.d/10-master.conf
@@ -72,7 +76,7 @@ SMPT_port: 25
 
 dovecot_first_valid_uid: 100
 
-site_imap_domain: imap.gomail.life
+site_imap_domain: imap.ldap.gomail.life
 cert_folder_path: /etc/pki/cert/
 private_cert_folder_name: private
 account_key_file_name: account.key
@@ -89,3 +93,13 @@ apache_service_name: apache2.service
 dovecot_ssl_target_config:
   - {from: '^ssl_cert =', to: 'ssl_cert = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/fullchain1.pem'}
   - {from: '^ssl_key =', to: 'ssl_key = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/privkey1.pem'}
+
+ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
+ldap_server_port: 389
+ldap_protocol_version: 3
+ldap_vmail_user: vmail
+ldap_top_level_domain: life
+ldap_root_domain: gomail
+ldap_root_organization: hosting
+ldap_bin_dn_user: cn={{ ldap_vmail_user }},o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
+ldap_search_base_dn: o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
