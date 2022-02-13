@@ -76,13 +76,27 @@
   tags:
     - current_tasks
 
-- name: enable dovecot to query user info on MySQL/MariaDB
+- name: copy ldap template conf file for dovecot connection to ldap
+  template:
+    src: '{{ dovecot_ldap_config_file_name }}.j2'
+    dest: '{{ dovecot_root_config_folder }}/{{ dovecot_ldap_config_file_name }}'
+  tags:
+    - imap_master_conf
+
+- name: copy 15-lda.conf template conf file for dovecot connection to ldap
+  template:
+    src: '{{ dovecot_15_lda_conf_file_name }}.j2'
+    dest: '{{ dovecot_config_folder }}/{{ dovecot_15_lda_conf_file_name }}'
+  tags:
+    - imap_master_conf
+
+- name: enable dovecot to query user info on openldap
   lineinfile:
     backup: yes
     path: '{{ dovecot_auth_config_file }}'
-    regexp: '!include auth-sql.conf.ext' 
-    insertafter: '^#!include auth-sql.conf.ext'
-    line: '!include auth-sql.conf.ext'
+    regexp: '^!include auth-ldap.conf.ext' 
+    insertafter: '^#!include auth-ldap.conf.ext'
+    line: '!include auth-ldap.conf.ext'
   notify:
     - restart dovecot service
   tags:
@@ -119,15 +133,15 @@
   tags:
     - imap_db_config
 
-- name: add MySQL/MariaDB database configuration to dovecot service
-  blockinfile:
-    backup: yes
-    path: '{{ dovecot_sql_conf_file }}'
-    block: '{{ dovecot_sql_target_conf }}'
-  notify:
-    - restart dovecot service
-  tags:
-    - imap_db_config
+#- name: add MySQL/MariaDB database configuration to dovecot service
+#  blockinfile:
+#    backup: yes
+#    path: '{{ dovecot_sql_conf_file }}'
+#    block: '{{ dovecot_sql_target_conf }}'
+#  notify:
+#    - restart dovecot service
+#  tags:
+#    - imap_db_config
 
 - name: copy dovecot master template configuration file
   template:
