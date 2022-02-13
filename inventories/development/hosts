@@ -1,14 +1,14 @@
 [aws_dev_servers]
-ec2-18-219-32-61.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
 
 [mail_servers]
-ec2-18-219-32-61.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
 
 [webmail_servers]
-ec2-18-219-32-61.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+ec2-18-118-48-144.us-east-2.compute.amazonaws.com ansible_user=ubuntu
 
 [mailadmin_servers]
-ec2-18-219-32-61.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
 
 [imap_servers]
-ec2-18-219-32-61.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
