@@ -27,92 +27,140 @@
   notify:
     - restart apache2 service
 
-- name: copy database creation script
-  copy:
-    src: postfixdb.sql
-    dest: /tmp
+#- name: create postfixadmin apache website folder
+#  copy:
+#    src: '{{ packages_dir }}/{{ postfixadmin_directory_name }}'
+#    dest: '{{ apache2_root_folder }}'
+#    owner: '{{ apache2_system_user }}'
+#    group: '{{ apache2_system_user }}'
+#    remote_src: yes
+#    mode: '755'
+#  tags:
+#    - postfixadmin
 
-- name: create postfix database
-  shell:
-    cmd: mysql -h {{ database_host }} -u {{ database_root_user }}  < /tmp/postfixdb.sql
-  environment:
-    MYSQL_PWD: '{{ database_root_password }}'
-  run_once: true
+#- name: modify permission of postfixadmin folder
+#  file:
+#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}'
+#    mode: '755'
+#  tags:
+#    - postfixadmin
 
-- name: hash postfix admin setup password
-  shell: 
-    cmd: php -r "echo password_hash('{{ postfixadmin_setup_password }}', PASSWORD_DEFAULT). PHP_EOL;"
-  register: setup_password
+#- name: modify permission of postfixadmin public folder
+#  file:
+#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ postfix_public_dir }}'
+#    mode: '755'
+#  tags:
+#    - postfixadmin
+
+#- name: create templates_c directory for postfixadmin
+#  file:
+#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ template_c_dir }}'
+#    mode: '755'
+#    group: '{{ apache2_system_user }}'
+#    owner: '{{ apache2_system_user }}'
+#    state: directory
+- name: configure default parameters for ldap DIT
+  ansible.builtin.debconf:
+    name: '{{ item.name }}'
+    question: '{{ item.question }}'
+    value: '{{ item.value }}'
+    vtype: '{{ item.vtype }}'
+  with_items:
+    - {name: 'slapd' , question: 'slapd/no_configuration', value: '{{ ldap_no_configuration }}', vtype: boolean }
+    - {name: 'slapd' , question: 'slapd/domain', value: '{{ ldap_root_domain }}', vtype: string }
+    - {name: 'slapd' , question: 'shared/organization', value: '{{ ldap_organization }}', vtype: string }
+    - {name: 'slapd' , question: 'slapd/purge_database', value: '{{ ldap_purge_database }}', vtype: boolean }
+    - {name: 'slapd' , question: 'slapd/move_old_database', value: '{{ ldap_move_old_database }}', vtype: boolean }
   tags:
-    - template
+    - openldap
 
-- name: create and configure config.local.php file
-  template:
-    src: '{{ postfixadmin_php_local_config_file }}.j2'
-    dest: '{{ packages_dir }}/{{ postfixadmin_directory_name }}/{{ postfixadmin_php_local_config_file }}'
-    mode: '0640'
-    group: '{{ apache2_system_user }}'
-    owner: '{{ apache2_system_user }}'
+- name: configure passwords for ldap admin
+  ansible.builtin.debconf:
+    name: '{{ item.name }}'
+    question: '{{ item.question }}'
+    value: '{{ item.value }}'
+    vtype: '{{ item.vtype }}'
+  with_items:
+    - {name: 'slapd' , question: 'slapd/internal/adminpw', value: '{{ ldap_admin_password }}', vtype: password }
+    - {name: 'slapd' , question: 'slapd/password1', value: '{{ ldap_admin_password }}', vtype: password }
+    - {name: 'slapd' , question: 'slapd/password2', value: '{{ ldap_admin_password }}', vtype: password }
+  no_log: true
   tags:
-    - template
+    - openldap
 
-- name: create postfixadmin apache website folder
+- name: reconfigure slapd package
+  ansible.builtin.shell: 
+    cmd: dpkg-reconfigure slapd -fnoninteractive
+  tags:
+    - openldap
+
+- name: copy schemas of vmailbox to ldap server
   copy:
-    src: '{{ packages_dir }}/{{ postfixadmin_directory_name }}'
-    dest: '{{ apache2_root_folder }}'
-    owner: '{{ apache2_system_user }}'
-    group: '{{ apache2_system_user }}'
     remote_src: yes
-    mode: '755'
+    src: '{{ vmailpanel_schema_folder }}'
+    dest: '{{ ldap_schema_folder }}'
   tags:
-    - postfixadmin
+   - openldap
 
-- name: modify permission of postfixadmin folder
-  file:
-    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}'
-    mode: '755'
+- name: add schemas to openldapd
+  ansible.builtin.shell: 
+    cmd: ldapadd -Y EXTERNAL -H ldapi:/// -f {{ item }}
+  with_items: '{{ schemas_to_load }}'
   tags:
-    - postfixadmin
+    - openldap
 
-- name: modify permission of postfixadmin public folder
-  file:
-    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ postfix_public_dir }}'
-    mode: '755'
+- name: create hash password for vmail directory account
+  expect:
+    command: slappasswd -h {MD5}
+    responses:
+      (?i)New password: '{{ vmail_account_password }}'
+      (?i)enter new password: '{{ vmail_account_password }}'
+  no_log: true
   tags:
-    - postfixadmin
+    - openladap
+    - current
+  register: vmail_account_hash_password
 
-- name: create templates_c directory for postfixadmin
-  file:
-    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ template_c_dir }}'
-    mode: '755'
-    group: '{{ apache2_system_user }}'
-    owner: '{{ apache2_system_user }}'
-    state: directory
-
-- name: add site name {{site_domain }} for postfixadmin
-  lineinfile:
-    backup: yes
-    firstmatch: yes
-    regexp: '{{ apache2_servername_regexp_line }}' 
-    insertbefore: '{{ apache2_conf_document_root_line }}'
-    line: '{{ apache2_servername_line_postfixadmin }}'
-    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
-  notify:
-    - restart apache2 service
+- name: print variable
+  debug:
+    var: vmail_account_hash_password
   tags:
-    - postfixadmin
+    - openldap
     - current
 
-- name: add alias for postfix admin website url
-  lineinfile:
+- name: copy template base.ldif file
+  template:
     backup: yes
-    firstmatch: yes
-    regexp: '{{ apache2_alias_regexp_line }}' 
-    insertafter: '{{ apache2_conf_document_root_line }}'
-    line: '{{ apache2_alias_line_postfixadmin }}'
-    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
-  notify:
-    - restart apache2 service
+    src: '{{ base_ldif_file }}.j2'
+    dest: '{{ ldap_schema_folder }}/{{ base_ldif_file }}'
   tags:
-    - postfixadmin
+    - openldap
     - current
+- name: load base ldif into the ldapd database
+  expect:
+    command: ldapmodify -a -D cn={{ admin_root_user }},dc={{ root_domain }},dc={{ top_level_domain }} -W -f {{ ldap_schema_folder }}/{{ base_ldif_file }}
+    responses:
+      (?i)LDAP password: '{{ ldap_admin_password }}'
+  tags:
+    - openldap
+
+- name: modify acl for vmailpanel on ldap
+  ansible.builtin.shell: 
+    cmd: ldapmodify -Y EXTERNAL -H ldapi:/// -f {{ item }}
+  with_items: '{{ acls_to_load }}'
+  tags:
+    - openldap
+    - current_tasks
+
+#- name: add alias for postfix admin website url
+#  lineinfile:
+#    backup: yes
+#    firstmatch: yes
+#    regexp: '{{ apache2_alias_regexp_line }}' 
+#    insertafter: '{{ apache2_conf_document_root_line }}'
+#    line: '{{ apache2_alias_line_postfixadmin }}'
+#    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+#  notify:
+#    - restart apache2 service
+#  tags:
+#    - postfixadmin
