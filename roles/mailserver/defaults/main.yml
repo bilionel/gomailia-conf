@@ -19,8 +19,9 @@ ldap_configuration_files_list:
   - '{{ ldap_transport_conf_file }}'
   - '{{ ldap_vacation_conf_file }}'
   - '{{ ldap_virtualforward_conf_file }}'
+  - '{{ ldap_virtual_domain_conf_file }}'
 
-postfix_config_directory: /etc/postfix/
+postfix_config_directory: /etc/postfix
 
 
 postfix_database_name: postfix
@@ -53,7 +54,6 @@ virtual_mailbox_domain_settings: |
   maildrop_destination_recipient_limit = 1
   gnarwl_destination_concurrency_limit = 1 
   gnarwl_destination_recipient_limit = 1
-  transport_maps = hash:/etc/postfix/transport, ldap:{{ postfix_config_directory }}/{{ ldap_transport_conf_file }}
 
   virtual_alias_maps = 
     ldap:{{ postfix_config_directory }}/{{ ldap_aliases_conf_file }}
@@ -63,14 +63,15 @@ virtual_mailbox_domain_settings: |
   # virtual accounts for delivery
   virtual_mailbox_base = /home/{{ vmail_system_user }}
   virtual_mailbox_maps = ldap:{{ postfix_config_directory }}/{{ ldap_account_conf_file }}
+  virtual_mailbox_domains = ldap:{{ postfix_config_directory }}/{{ ldap_virtual_domain_conf_file }}
   local_recipient_maps = $alias_maps
+
   recipient_bcc_maps = ldap:{{ postfix_config_directory }}/{{ ldap_vacation_conf_file }}
 
   virtual_mailbox_limit = 51200000
   virtual_minimum_uid = {{ system_virtual_minimum_uid }}
   virtual_uid_maps = static:{{ getent_passwd[vmail_system_user].1 }}
   virtual_gid_maps = static:{{ getent_passwd[vmail_system_user].2 }}
-  virtual_transport = virtual
 
 
 system_virtual_minimum_uid: 1000
@@ -85,9 +86,9 @@ enable_submission_service_line:
 lmtp_port: 24
 dovecot_auth_port: 12345
 
-letsencrypt_cert_folder: /etc/letsencrypt/archive/
+letsencrypt_cert_folder: /etc/letsencrypt/archive
 site_smtp_domain: smtp.ldap.gomail.life
-cert_folder_path: /etc/pki/cert/
+cert_folder_path: /etc/pki/cert
 private_cert_folder_name: private
 csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
 support_email: blionnel15@gmail.com
@@ -102,10 +103,13 @@ ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
 ldap_server_port: 389
 ldap_protocol_version: 3
 ldap_vmail_user: vmail
+ldap_admin_user: admin
 ldap_top_level_domain: life
 ldap_root_domain: gomail
 ldap_root_organization: hosting
+ldap_base_domain: dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
 ldap_bin_dn_user: cn={{ ldap_vmail_user }},o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
+ldap_bin_admin_user: cn={{ ldap_admin_user }},o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
 ldap_search_base_dn: o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
 
 ldap_account_conf_file: ldap-accounts.cf
@@ -114,3 +118,8 @@ ldap_aliases_conf_file: ldap-aliases.cf
 ldap_transport_conf_file: ldap-transport.cf
 ldap_vacation_conf_file: ldap-vacation.cf
 ldap_virtualforward_conf_file: ldap-virtualforward.cf
+ldap_virtual_domain_conf_file: ldap_virtual_domains.cf
+
+gnarwl_config_folder: /etc
+gnarwl_config_file: gnarwl.cfg
+transport_config_file: transport
