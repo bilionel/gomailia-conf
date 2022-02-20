@@ -45,7 +45,7 @@ dovecot_master_config_file: /etc/dovecot/conf.d/10-master.conf
 dovecot_auth_config_file: /etc/dovecot/conf.d/10-auth.conf
 dovecot_sql_conf_file: /etc/dovecot/dovecot-sql.conf.ext
 dovecot_ssl_conf_file: /etc/dovecot/conf.d/10-ssl.conf
-letsencrypt_cert_folder: /etc/letsencrypt/archive/
+letsencrypt_cert_folder: /etc/letsencrypt/archive
 postfix_database_name: postfix
 dovecot_user_id: 114
 dovecot_group_id: 122
@@ -75,9 +75,11 @@ imap_login_port: 143
 SMPT_port: 25
 
 dovecot_first_valid_uid: 100
+mail_uid: '{{ getent_passwd[dovecot_user].1 }}'
+mail_guid: '{{ getent_passwd[dovecot_user].2 }}'
 
 site_imap_domain: imap.ldap.gomail.life
-cert_folder_path: /etc/pki/cert/
+cert_folder_path: /etc/pki/cert
 private_cert_folder_name: private
 account_key_file_name: account.key
 csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
