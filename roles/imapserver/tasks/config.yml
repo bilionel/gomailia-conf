@@ -132,6 +132,7 @@
     key: '{{ dovecot_user }}'
   tags:
     - imap_db_config
+    - ldap
 
 #- name: add MySQL/MariaDB database configuration to dovecot service
 #  blockinfile:
@@ -161,7 +162,7 @@
   tags:
     - imap_master_conf
 
-- name: change first valid uid for dovecot
+- name: change first valid mail uid for dovecot
   lineinfile:
     path: '{{ dovecot_mailbox_namespace_config_file }}'
     regexp: '^first_valid_uid ='
@@ -169,6 +170,32 @@
     backup: yes
   notify:
     - restart dovecot service
+  tags:
+    - ldap
+
+- name: set mail uid for dovecot
+  lineinfile:
+    path: '{{ dovecot_mailbox_namespace_config_file }}'
+    regexp: '^mail_uid ='
+    insertafter: '^#mail_uid ='
+    line: 'mail_uid = {{ mail_uid }}'
+    backup: yes
+  notify:
+    - restart dovecot service
+  tags:
+    - ldap
+
+- name: set mail guid for dovecot
+  lineinfile:
+    path: '{{ dovecot_mailbox_namespace_config_file }}'
+    regexp: '^mail_gid ='
+    insertafter: '^#mail_gid ='
+    line: 'mail_gid = {{ mail_guid }}'
+    backup: yes
+  notify:
+    - restart dovecot service
+  tags:
+    - ldap
 
 - name: Check if apache service is present on system
   stat: 
