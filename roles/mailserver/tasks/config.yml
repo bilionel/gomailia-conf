@@ -12,6 +12,7 @@
     - restart postfix service
   tags:
     - map_config_file
+    - new
 
 
 - name: create virtual mail system group
@@ -21,6 +22,7 @@
   tags:
     - create_user
     - postfix_ldap
+    - new
 
 - name: create virtual mail system user
   user:
@@ -31,6 +33,7 @@
   tags:
     - create_user
     - postfix_ldap
+    - new
 
 - name: Get postfix system user '{{ vmail_system_user }}' user info
   getent:
@@ -38,7 +41,8 @@
     key: '{{ vmail_system_user }}'
   tags:
     - current_tasks
-    - - postfix_ldap
+    - postfix_ldap
+    - new
 
 - name: configure postfix with ldap maps
   blockinfile:
@@ -50,6 +54,7 @@
   tags:
     - configure_postfix
     - postfix_ldap
+    - new
 
 - name: configure spectific parameter of postfix
   lineinfile:
@@ -101,6 +106,33 @@
     - restart postfix service
   tags:
     - postfix_system_user
+  
+- name: copy gnarwl template configuration file
+  template:
+    src: '{{ gnarwl_config_file }}.j2'
+    dest: '{{ gnarwl_config_folder }}/{{ gnarwl_config_file }}'
+    backup: yes
+    owner: '{{ vmail_system_user }}'
+    group: '{{ vmail_system_user }}'
+  tags:
+    - new
+
+- name: copy postfix transport template configuration file
+  template:
+    src: '{{ transport_config_file }}.j2'
+    dest: '{{ postfix_config_directory }}/{{ transport_config_file }}'
+    backup: yes
+  tags:
+    - new
+
+- name: create de transport db
+  shell:
+    cmd: postmap {{ postfix_config_directory }}/{{ transport_config_file }}
+  tags:
+    - new
+
+
+
 
 - name: Check if apache service is present on system
   stat: 
