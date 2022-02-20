@@ -6,3 +6,9 @@
     name: apache2
     state: restarted
     enabled: yes
+
+- name: Restart cron service
+  service:
+    name: cron
+    state: restarted
+    enabled: yes
