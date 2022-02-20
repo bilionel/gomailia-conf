@@ -67,7 +67,7 @@
     vtype: '{{ item.vtype }}'
   with_items:
     - {name: 'slapd' , question: 'slapd/no_configuration', value: '{{ ldap_no_configuration }}', vtype: boolean }
-    - {name: 'slapd' , question: 'slapd/domain', value: '{{ ldap_root_domain }}', vtype: string }
+    - {name: 'slapd' , question: 'slapd/domain', value: '{{ ldap_domain }}', vtype: string }
     - {name: 'slapd' , question: 'shared/organization', value: '{{ ldap_organization }}', vtype: string }
     - {name: 'slapd' , question: 'slapd/purge_database', value: '{{ ldap_purge_database }}', vtype: boolean }
     - {name: 'slapd' , question: 'slapd/move_old_database', value: '{{ ldap_move_old_database }}', vtype: boolean }
@@ -152,15 +152,79 @@
     - openldap
     - current_tasks
 
-#- name: add alias for postfix admin website url
-#  lineinfile:
-#    backup: yes
-#    firstmatch: yes
-#    regexp: '{{ apache2_alias_regexp_line }}' 
-#    insertafter: '{{ apache2_conf_document_root_line }}'
-#    line: '{{ apache2_alias_line_postfixadmin }}'
-#    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
-#  notify:
-#    - restart apache2 service
-#  tags:
-#    - postfixadmin
+- name: create vmailpanel apache website folder
+  copy:
+    src: '{{ packages_dir }}/{{ mailadmin_directory_name }}'
+    dest: '{{ apache2_root_folder }}'
+    owner: '{{ apache2_system_user }}'
+    group: '{{ apache2_system_user }}'
+    remote_src: yes
+    mode: '755'
+  tags:
+    - vmailpanel
+
+- name: modify permission of vmailpanel folder
+  file:
+    path: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}'
+    mode: '755'
+  tags:
+    - vmailpanel
+- name: modify permission of vmailpanel public folder
+  file:
+    path: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}/{{ mailadmin_public_folder }}'
+    mode: '755'
+  tags:
+    - vmailpanel
+
+- name: copy template config.inc.php file
+  template:
+    backup: yes
+    src: '{{ vmailpanel_config_inc_file }}.j2'
+    dest: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}/{{ vmailpanel_config_inc_file }}'
+  tags:
+    - vmailpanel
+    - current
+- name: copy cleaner template file
+  template:
+    backup: yes
+    src: '{{ cleaner_script_file }}.j2'
+    dest: '{{ vmail_home_directory }}/{{ cleaner_script_file }}'
+  tags:
+    - vmailpanel
+    - current
+
+- name: create cron job for cleaner Job execution
+  cron:
+    name: "cleaner job"
+    minute: "{{ cleaner_job_minute }}"
+    job: "{{ cleaner_job_command }}"
+  tags: 
+    - vmailpanel
+  notify: Restart cron service
+
+- name: add alias for mailadmin url in default http site
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_alias_regexp_line }}' 
+    insertafter: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_alias_line_mailadmin }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - vmailpanel
+
+- name: add alias for mailadmin url in default https site
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_alias_regexp_line }}' 
+    insertafter: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_alias_line_mailadmin_ssl }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - vmailpanel
+    - current
