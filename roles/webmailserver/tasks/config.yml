@@ -61,15 +61,17 @@
     line: 'date.timezone = {{ time_zone }}'
   notify:
     - restart apache2 service
+  tags:
+    - current
 
 
-- name: add site name {{site_domain }} for webmail server
+- name: add site name {{ site_domain }} for webmail server
   lineinfile:
     backup: yes
     firstmatch: yes
     regexp: '{{ apache2_servername_regexp_line }}' 
     insertbefore: '{{ apache2_conf_document_root_line }}'
-    line: '{{ apache2_servername_line_postfixadmin }}'
+    line: '{{ apache2_servername_line_mailadmin }}'
     path: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
   notify:
     - restart apache2 service
