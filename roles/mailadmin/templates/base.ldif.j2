@@ -4,9 +4,9 @@ objectClass: top
 o: hosting description: Hosting Organization
 # Read only account
 
-dn: cn={{ vmail_account }},o={{hosting_ou}},dc={{ root_domain }},dc={{ top_level_domain }}
+dn: cn={{ ldap_full_domain }},o={{hosting_ou}},dc={{ root_domain }},dc={{ top_level_domain }}
 objectClass: simpleSecurityObject
 objectClass: organizationalRole
-cn: {{ vmail_account }}
+cn: {{ ldap_full_domain }}
 userPassword: {{ vmail_account_hash_password.stdout_lines[2] }}
 description: Read only account
