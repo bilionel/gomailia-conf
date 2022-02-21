@@ -20,7 +20,5 @@
   ansible.builtin.git:
     repo: '{{ mailadmin_repository }}'
     dest: '{{ packages_dir }}/{{ mailadmin_directory_name }}'
-
-#    version: '{{ mailadmin_version }}'
   tags:
     - install
