@@ -33,7 +33,7 @@ acme_diretory_url: https://acme-v02.api.letsencrypt.org/directory
 
 cert_folder_path: /etc/pki/cert
 account_key_file_name: account.key
-csr_key_file_name :  '{{ site_domain }}.key'
+csr_key_file_name:  '{{ site_domain }}.key'
 csr_file_name: '{{ site_domain }}.csr'
 apache2_target_cert_conf:
   - { from: '^\s*SSLCertificateFile', to: '                SSLCertificateFile      {{ apache2_conf_folder }}/{{ site_domain }}.crt' }
