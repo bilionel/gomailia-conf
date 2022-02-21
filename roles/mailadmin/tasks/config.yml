@@ -1,23 +1,5 @@
 ---  
   
-
-#- name: create postfix database
-#  shell:
-#    argv:
-#      - mysql
-#      - -h {{ database_host }}
-#      - -u {{ database_root_user }}
-#      - < postfixdb.sql
-#  environment:
-#    MYSQL_PWD: '{{ database_root_password }}'
-
-#- name: configure mysql login
-#  ansible.builtin.expect:
-#    command: mysql_config_editor set --login-path={{ database_login_path }} --user={{ database_root_user }} --password
-#    responses:
-#      (?i)password: '{{ database_root_password }}'
-#  no_log: true
-
 - name: put www-data as owner of /var/www folder for apache2
   file:
     path: /var/www
@@ -26,39 +8,9 @@
     owner: '{{ apache2_system_user }}'
   notify:
     - restart apache2 service
+  tags:
+    - apache2
 
-#- name: create postfixadmin apache website folder
-#  copy:
-#    src: '{{ packages_dir }}/{{ postfixadmin_directory_name }}'
-#    dest: '{{ apache2_root_folder }}'
-#    owner: '{{ apache2_system_user }}'
-#    group: '{{ apache2_system_user }}'
-#    remote_src: yes
-#    mode: '755'
-#  tags:
-#    - postfixadmin
-
-#- name: modify permission of postfixadmin folder
-#  file:
-#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}'
-#    mode: '755'
-#  tags:
-#    - postfixadmin
-
-#- name: modify permission of postfixadmin public folder
-#  file:
-#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ postfix_public_dir }}'
-#    mode: '755'
-#  tags:
-#    - postfixadmin
-
-#- name: create templates_c directory for postfixadmin
-#  file:
-#    path: '{{ apache2_root_folder }}/{{ postfixadmin_directory_name }}/{{ template_c_dir }}'
-#    mode: '755'
-#    group: '{{ apache2_system_user }}'
-#    owner: '{{ apache2_system_user }}'
-#    state: directory
 - name: configure default parameters for ldap DIT
   ansible.builtin.debconf:
     name: '{{ item.name }}'
@@ -67,7 +19,7 @@
     vtype: '{{ item.vtype }}'
   with_items:
     - {name: 'slapd' , question: 'slapd/no_configuration', value: '{{ ldap_no_configuration }}', vtype: boolean }
-    - {name: 'slapd' , question: 'slapd/domain', value: '{{ ldap_domain }}', vtype: string }
+    - {name: 'slapd' , question: 'slapd/domain', value: '{{ ldap_full_domain }}', vtype: string }
     - {name: 'slapd' , question: 'shared/organization', value: '{{ ldap_organization }}', vtype: string }
     - {name: 'slapd' , question: 'slapd/purge_database', value: '{{ ldap_purge_database }}', vtype: boolean }
     - {name: 'slapd' , question: 'slapd/move_old_database', value: '{{ ldap_move_old_database }}', vtype: boolean }
@@ -92,7 +44,7 @@
   ansible.builtin.shell: 
     cmd: dpkg-reconfigure slapd -fnoninteractive
   tags:
-    - openldap
+    - init_ldap__db
 
 - name: copy schemas of vmailbox to ldap server
   copy:
@@ -118,7 +70,6 @@
   no_log: true
   tags:
     - openladap
-    - current
   register: vmail_account_hash_password
 
 - name: print variable
@@ -126,7 +77,6 @@
     var: vmail_account_hash_password
   tags:
     - openldap
-    - current
 
 - name: copy template base.ldif file
   template:
@@ -135,7 +85,7 @@
     dest: '{{ ldap_schema_folder }}/{{ base_ldif_file }}'
   tags:
     - openldap
-    - current
+
 - name: load base ldif into the ldapd database
   expect:
     command: ldapmodify -a -D cn={{ admin_root_user }},dc={{ root_domain }},dc={{ top_level_domain }} -W -f {{ ldap_schema_folder }}/{{ base_ldif_file }}
@@ -150,7 +100,6 @@
   with_items: '{{ acls_to_load }}'
   tags:
     - openldap
-    - current_tasks
 
 - name: create vmailpanel apache website folder
   copy:
@@ -161,20 +110,21 @@
     remote_src: yes
     mode: '755'
   tags:
-    - vmailpanel
+    - apache2
 
 - name: modify permission of vmailpanel folder
   file:
     path: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}'
     mode: '755'
   tags:
-    - vmailpanel
+    - apache2
+
 - name: modify permission of vmailpanel public folder
   file:
     path: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}/{{ mailadmin_public_folder }}'
     mode: '755'
   tags:
-    - vmailpanel
+    - apache2
 
 - name: copy template config.inc.php file
   template:
@@ -182,16 +132,15 @@
     src: '{{ vmailpanel_config_inc_file }}.j2'
     dest: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}/{{ vmailpanel_config_inc_file }}'
   tags:
-    - vmailpanel
-    - current
+    - apache2
+
 - name: copy cleaner template file
   template:
     backup: yes
     src: '{{ cleaner_script_file }}.j2'
     dest: '{{ vmail_home_directory }}/{{ cleaner_script_file }}'
   tags:
-    - vmailpanel
-    - current
+    - openldap
 
 - name: create cron job for cleaner Job execution
   cron:
@@ -199,7 +148,7 @@
     minute: "{{ cleaner_job_minute }}"
     job: "{{ cleaner_job_command }}"
   tags: 
-    - vmailpanel
+    - cron
   notify: Restart cron service
 
 - name: add alias for mailadmin url in default http site
@@ -213,7 +162,7 @@
   notify:
     - restart apache2 service
   tags:
-    - vmailpanel
+    - apache2
 
 - name: add alias for mailadmin url in default https site
   lineinfile:
@@ -226,5 +175,4 @@
   notify:
     - restart apache2 service
   tags:
-    - vmailpanel
-    - current
+    - apache2
