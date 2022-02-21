@@ -43,26 +43,10 @@ dovecot_master_config_file_name: 10-master.conf
 dovecot_submission_config_file_name: 20-submission.conf
 dovecot_master_config_file: /etc/dovecot/conf.d/10-master.conf
 dovecot_auth_config_file: /etc/dovecot/conf.d/10-auth.conf
-dovecot_sql_conf_file: /etc/dovecot/dovecot-sql.conf.ext
 dovecot_ssl_conf_file: /etc/dovecot/conf.d/10-ssl.conf
 letsencrypt_cert_folder: /etc/letsencrypt/archive
-postfix_database_name: postfix
 dovecot_user_id: 114
 dovecot_group_id: 122
-
-dovecot_sql_target_conf: |
-  driver = mysql
-
-  connect = host={{ database_host }} dbname={{ postfix_database_name }} user={{ postfix_database_rw_user }} password={{ postfix_database_rw_password }}
-
-  default_pass_scheme = MD5-CRYPT
-
-  password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
-
-  user_query = SELECT maildir, {{ getent_passwd[dovecot_user].1 }} AS uid, {{ getent_passwd[dovecot_user].2 }} AS gid FROM mailbox WHERE username = '%u' AND active='1'
-
-  iterate_query = SELECT username AS user FROM mailbox
-
 
 # ports
 service_auth_port: 12345
@@ -81,15 +65,10 @@ mail_guid: '{{ getent_passwd[dovecot_user].2 }}'
 site_imap_domain: imap.ldap.gomail.life
 cert_folder_path: /etc/pki/cert
 private_cert_folder_name: private
-account_key_file_name: account.key
-csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
-csr_file_name: '{{ site_imap_domain }}.csr' 
-acme_diretory_url: https://acme-v02.api.letsencrypt.org/directory
 countryname: CM
 organizationname: gomailia
 organizationalunitname: mailservice
 support_email: blionnel15@gmail.com
-challenge_directory: .well-known/acme-challenge
 lib_services_folder: /lib/systemd/system
 apache_service_name: apache2.service
 dovecot_ssl_target_config:
