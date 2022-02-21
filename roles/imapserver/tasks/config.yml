@@ -11,7 +11,6 @@
     - restart dovecot service
   tags:
     - imap_configuration
-    - current_tasks
 
 - name: create mail directory for dovecot
   file:
@@ -19,6 +18,8 @@
     group: '{{ dovecot_user }}'
     owner: '{{ dovecot_user }}'
     state: directory
+  tags:
+    - imap_configuration
 
 - name: specify mailbox directory in dovecot
   lineinfile:
@@ -41,7 +42,6 @@
     - restart dovecot service
   tags:
     - imap_configuration
-
 
 - name: add dovecot user to mail group
   user:
@@ -74,21 +74,21 @@
   notify:
     - restart dovecot service
   tags:
-    - current_tasks
+    - imap_configuration
 
 - name: copy ldap template conf file for dovecot connection to ldap
   template:
     src: '{{ dovecot_ldap_config_file_name }}.j2'
     dest: '{{ dovecot_root_config_folder }}/{{ dovecot_ldap_config_file_name }}'
   tags:
-    - imap_master_conf
+    - dovecot_ldap
 
 - name: copy 15-lda.conf template conf file for dovecot connection to ldap
   template:
     src: '{{ dovecot_15_lda_conf_file_name }}.j2'
     dest: '{{ dovecot_config_folder }}/{{ dovecot_15_lda_conf_file_name }}'
   tags:
-    - imap_master_conf
+    - dovecot_ldap
 
 - name: enable dovecot to query user info on openldap
   lineinfile:
@@ -100,7 +100,7 @@
   notify:
     - restart dovecot service
   tags:
-    - imap_auth_service
+    - dovecot_ldap
 
 - name: disable dovecot to query local linux user database
   lineinfile:
@@ -111,7 +111,7 @@
   notify:
     - restart dovecot service
   tags:
-    - imap_auth_service
+    - imap_configuration
 
 - name: add configuration to debug login issues
   lineinfile:
@@ -124,25 +124,14 @@
   notify:
     - restart dovecot service
   tags:
-    - imap_debug
+    - imap_configuration
   
 - name: Get dovecot system user '{{ dovecot_user }}' info
   getent:
     database: passwd
     key: '{{ dovecot_user }}'
   tags:
-    - imap_db_config
-    - ldap
-
-#- name: add MySQL/MariaDB database configuration to dovecot service
-#  blockinfile:
-#    backup: yes
-#    path: '{{ dovecot_sql_conf_file }}'
-#    block: '{{ dovecot_sql_target_conf }}'
-#  notify:
-#    - restart dovecot service
-#  tags:
-#    - imap_db_config
+    - imap_configuration
 
 - name: copy dovecot master template configuration file
   template:
@@ -151,7 +140,7 @@
   notify:
     - restart dovecot service
   tags:
-    - imap_master_conf
+    - imap_configuration
 
 - name: copy dovecot submission template configuration file
   template:
@@ -160,7 +149,7 @@
   notify:
     - restart dovecot service
   tags:
-    - imap_master_conf
+    - imap_configuration
 
 - name: change first valid mail uid for dovecot
   lineinfile:
@@ -171,7 +160,7 @@
   notify:
     - restart dovecot service
   tags:
-    - ldap
+    - imap_configuration
 
 - name: set mail uid for dovecot
   lineinfile:
@@ -183,7 +172,7 @@
   notify:
     - restart dovecot service
   tags:
-    - ldap
+    - imap_configuration
 
 - name: set mail guid for dovecot
   lineinfile:
@@ -195,14 +184,14 @@
   notify:
     - restart dovecot service
   tags:
-    - ldap
+    - imap_configuration
 
 - name: Check if apache service is present on system
   stat: 
     path: '{{lib_services_folder}}/{{ apache_service_name }}'
   register: service_status
   tags:
-    - cert
+    - apache2
 
 - name: stop apache service
   service:
@@ -212,7 +201,7 @@
   notify:
     - restart apache service
   tags:
-    - cert
+    - apache2
 
 - name: generate certificate for dovecot services
   shell:
@@ -227,8 +216,7 @@
   args:
     chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
   tags:
-    - current_tasks
-    - cert
+    - apache2
 
 - name: configure dovecot to use ssl certificate
   lineinfile:
@@ -239,89 +227,4 @@
   notify:
     - restart dovecot service
   tags:
-    - cert
-#- name: create directory for certificate key
-#  file:
-#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
-#    group: '{{ dovecot_user }}'
-#    owner: '{{ dovecot_user }}'
-#    state: directory
-#    recurse: yes
-#  tags:
-#    - ssl
-#
-#- name: create acount key for ACME directory
-#  community.crypto.openssl_privatekey:
-#    backup: yes
-#    curve: secp384r1
-#    group: '{{ dovecot_user }}'
-#    owner: '{{ dovecot_user }}'
-#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
-#  tags:
-#      - ssl
-#
-#- name: create key for csr request of dovecot
-#  community.crypto.openssl_privatekey:
-#    backup: yes
-#    curve: secp384r1
-#    group: '{{ dovecot_user }}'
-#    owner: '{{ dovecot_user }}'
-#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
-#  tags:
-#      - ssl
-#
-#- name: create csr file for {{ site_imap_domain }}
-#  community.crypto.openssl_csr:
-#    backup: yes
-#    common_name: '{{ site_imap_domain }}'
-#    country_name: '{{ countryname }}'
-#    organization_name: '{{ organizationname }}'
-#    organizational_unit_name: '{{ organizationalunitname }}'
-#    email_address: '{{ support_email }}'
-#    privatekey_path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
-#    group: '{{ dovecot_user }}'
-#    owner: '{{ dovecot_user }}'
-#    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
-#  tags:
-#      - ssl
-#
-#- name: Create a challenge for {{ site_imap_domain }} using an account key file.
-#  community.crypto.acme_certificate:
-#    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
-#    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
-#    fullchain_dest: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ site_imap_domain }}.crt'
-#    acme_version: 2
-#    acme_directory: '{{ acme_diretory_url }}'
-#    terms_agreed: yes
-#  register: sample_com_challenge
-#  tags:
-#      - ssl
-#
-#- name: create acme challenge directories
-#  file:
-#    path: "{{ cert_folder_path }}/{{ challenge_directory }}"
-#    state: directory
-#  tags:
-#    - ssl
-#   
-#
-#- name: fulfill challenge to generate certificate
-#  copy:
-#    dest: "{{ cert_folder_path }}/{{ sample_com_challenge['challenge_data'][site_imap_domain]['http-01']['resource'] }}"
-#    content: "{{ sample_com_challenge['challenge_data'][site_imap_domain]['http-01']['resource_value'] }}"
-#  when: sample_com_challenge is changed and  site_imap_domain in sample_com_challenge['challenge_data']
-#  tags:
-#    - ssl
-#
-#- name: Create a certificate for {{ site_imap_domain }} site using an account key file.
-#  community.crypto.acme_certificate:
-#    account_key_src: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
-#    csr: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
-#    fullchain_dest: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ site_imap_domain }}.crt'
-#    acme_version: 2
-#    acme_directory: '{{ acme_diretory_url }}'
-#    data: '{{ sample_com_challenge }}'
-#    terms_agreed: yes
-#    challenge: tls-alpn-01
-#  tags:
-#    - ssl
+    - apache2
