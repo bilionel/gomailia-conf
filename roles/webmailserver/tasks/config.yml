@@ -8,6 +8,8 @@
     dest:  '{{ packages_folder }}'
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
+  tags:
+    - roundcube_install
 
 - name: create roundcube website directory
   file:
@@ -16,6 +18,8 @@
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
     recurse: yes
+  tags:
+    - roundcube_install
 
 - name: create roundcube website
   copy:
@@ -24,18 +28,24 @@
     dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
+  tags:
+    - roundcube_install
 
 - name: copy database creation script
   copy:
     src: createdb.sql
     dest: /tmp
+  tags:
+    - roundcube_install
 
 - name: create roundcube database and database user
   shell:
     cmd: mysql -h {{ database_host }} -u {{ database_root_user }}  < /tmp/createdb.sql
   environment:
     MYSQL_PWD: '{{ database_root_password }}'
-  run_once: true 
+  run_once: true
+  tags:
+    - roundcube_config
 
 - name: change database initialization script
   copy:
@@ -43,7 +53,7 @@
     dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
     backup: yes
   tags:
-    - current_tasks
+    - roundcube_config
 
 - name: intialize roundcube database
   shell:
@@ -52,7 +62,7 @@
     MYSQL_PWD: '{{ database_rw_password }}'
   run_once: true
   tags:
-    - current_tasks
+    - roundcube_config
 
 - name: set php data.timezone
   lineinfile:
@@ -62,8 +72,7 @@
   notify:
     - restart apache2 service
   tags:
-    - current
-
+    - roundcube_config
 
 - name: add site name {{ site_domain }} for webmail server
   lineinfile:
@@ -76,5 +85,4 @@
   notify:
     - restart apache2 service
   tags:
-    - postfixadmin
-    - current
+    - roundcube_config
