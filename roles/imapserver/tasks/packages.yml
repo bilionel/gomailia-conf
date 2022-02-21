@@ -6,4 +6,4 @@
     state: present
   loop: "{{ ubuntu_packages_list }}"
   tags:
-    - packages
+    - install
