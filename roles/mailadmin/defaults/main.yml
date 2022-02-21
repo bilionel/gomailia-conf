@@ -12,19 +12,10 @@ packages_dir: /packages
 vmail_system_user: vmail
 vmail_home_directory: /home/vmail
 mailadmin_public_folder: public
-template_c_dir: templates_c
 mailadmin_directory_name: emailadmin
-mailadmin_version: postfixadmin-3.3.10
 mailadmin_repository: https://github.com/wolfman68/vMailpanel.git
-mailadmin_webfolder: /var/www/html/{{ mailadmin_directory_name }}
-
-
-database_type: mysqli
-postfix_database_name: postfix
-mailadmin_root_folder: /packages/{{ mailadmin_directory_name }}
-mailadmin_php_local_config_file: config.local.php
-
-postfix_password_encryption_protocol: md5crypt
+mailadmin_webfolder: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}'
+mailadmin_root_folder: '{{ packages_dir }}/{{ mailadmin_directory_name }}'
 
 site_domain: ldap.gomail.life
 countryname: CM
@@ -32,13 +23,14 @@ support_email: admin@gomail.life
 organizationname: gomailia
 organizationalunitname: mailservice
 
+# apache2 mailadmin specific configuration
 apache2_alias_regexp_line: '        Alias /{{ mailadmin_directory_name }}'
 apache2_servername_regexp_line: '        ServerName '
 apache2_servername_line_mailadmin: '        ServerName {{ site_domain }}'
 apache2_alias_line_mailadmin: '        Alias /{{ mailadmin_directory_name }} {{ mailadmin_webfolder }}/{{ mailadmin_public_folder }}'
 apache2_alias_line_mailadmin_ssl: '                Alias /{{ mailadmin_directory_name }} {{ mailadmin_webfolder }}/{{ mailadmin_public_folder }}'
 
-
+# LDAP
 vmailpanel_schema_folder: '{{ mailadmin_root_folder }}/schema/'
 ldap_schema_folder: /etc/ldap/schema
 schemas_to_load:
@@ -54,16 +46,12 @@ admin_root_dn: 'cn=admin'
 admin_root_user: admin
 top_level_domain: life
 root_domain: gomail
-
-# ldap
-ldap_domain: gomail.life
+ldap_full_domain: '{{ root_domain }}.{{top_level_domain}}'
 hosting_ou: hosting
-ldap_database_backend: MDB
 ldap_no_configuration: false
 ldap_purge_database: true
 ldap_move_old_database: true
 ldap_organization: gomail.life
-vmail_account: vmail
 base_ldif_file: base.ldif
 ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
 ldap_server_port: 389
