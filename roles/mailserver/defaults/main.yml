@@ -24,25 +24,8 @@ ldap_configuration_files_list:
 postfix_config_directory: /etc/postfix
 
 
-postfix_database_name: postfix
-database_alias_table: alias
-database_domain_table: domain
-database_mailbox_table: mailbox
-database_quota_table: mailbox
-database_relay_domain_table: domain
-alias_select_field: goto
-alias_where_field: address
-domain_select_field: domain
-domain_where_field: domain
-mailbox_select_field: maildir
-mailbox_where_field: username
-quota_select_field: quota
-quota_where_field: username
-relay_domain_select_field: domain
-relay_domain_where_field: domain
 
 vmail_system_user: vmail
-vmail: test
 vmail_groups: 
   - sasl
 
@@ -102,7 +85,7 @@ smtp_tls_target_config:
 ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
 ldap_server_port: 389
 ldap_protocol_version: 3
-ldap_vmail_user: vmail
+ldap_vmail_user: '{{ vmail_system_user }}'
 ldap_admin_user: admin
 ldap_top_level_domain: life
 ldap_root_domain: gomail
@@ -120,6 +103,8 @@ ldap_vacation_conf_file: ldap-vacation.cf
 ldap_virtualforward_conf_file: ldap-virtualforward.cf
 ldap_virtual_domain_conf_file: ldap_virtual_domains.cf
 
+
+# gnarwl variables
 gnarwl_config_folder: /etc
 gnarwl_config_file: gnarwl.cfg
 transport_config_file: transport
