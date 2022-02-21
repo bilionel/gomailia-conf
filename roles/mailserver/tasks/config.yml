@@ -12,8 +12,6 @@
     - restart postfix service
   tags:
     - map_config_file
-    - new
-
 
 - name: create virtual mail system group
   group:
@@ -21,9 +19,7 @@
     state: present
   tags:
     - create_user
-    - postfix_ldap
-    - new
-
+    
 - name: create virtual mail system user
   user:
     name: '{{ vmail_system_user }}'
@@ -32,17 +28,13 @@
     home: /home/{{ vmail_system_user }}
   tags:
     - create_user
-    - postfix_ldap
-    - new
-
+    
 - name: Get postfix system user '{{ vmail_system_user }}' user info
   getent:
     database: passwd
     key: '{{ vmail_system_user }}'
   tags:
-    - current_tasks
-    - postfix_ldap
-    - new
+    - create_user
 
 - name: configure postfix with ldap maps
   blockinfile:
@@ -52,9 +44,7 @@
   notify:
     - restart postfix service
   tags:
-    - configure_postfix
     - postfix_ldap
-    - new
 
 - name: configure spectific parameter of postfix
   lineinfile:
@@ -62,7 +52,7 @@
     regexp: '^myhostname ='
     line: myhostname = {{ mailserver_hostname }}
   tags:
-    - configure_postfix
+    - postfix_ldap
   notify: 
     - restart postfix service
 
@@ -78,7 +68,7 @@
   notify:
     - restart postfix service
   tags:
-    - imap_lmtp_service
+    - postfix_config
 
 - name: modify postfix main config file for dovecot auth service
   lineinfile:
@@ -94,7 +84,7 @@
   notify:
     - restart postfix service
   tags:
-    - imap_auth_service
+    - postfix_config
 
 - name: enable submission service on postfix
   lineinfile:
@@ -105,7 +95,7 @@
   notify:
     - restart postfix service
   tags:
-    - postfix_system_user
+    - postfix_config
   
 - name: copy gnarwl template configuration file
   template:
@@ -115,7 +105,7 @@
     owner: '{{ vmail_system_user }}'
     group: '{{ vmail_system_user }}'
   tags:
-    - new
+    - gnarwl_config
 
 - name: copy postfix transport template configuration file
   template:
@@ -123,15 +113,13 @@
     dest: '{{ postfix_config_directory }}/{{ transport_config_file }}'
     backup: yes
   tags:
-    - new
+    - postfix_config
 
 - name: create de transport db
   shell:
     cmd: postmap {{ postfix_config_directory }}/{{ transport_config_file }}
   tags:
-    - new
-
-
+    - postfix_config
 
 
 - name: Check if apache service is present on system
@@ -139,7 +127,7 @@
     path: '{{lib_services_folder}}/{{ apache_service_name }}'
   register: service_status
   tags:
-    - cert
+    - postfix_config
 
 - name: stop apache service
   service:
@@ -149,7 +137,7 @@
   notify:
     - restart apache service
   tags:
-    - cert
+    - postfix_config
 
 - name: generate certificate for mailserver service
   shell:
@@ -164,8 +152,7 @@
   args:
     chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
   tags:
-    - current_tasks
-    - cert
+    - postfix_config
 
 - name: configure smtp service with tls
   lineinfile:
@@ -176,4 +163,4 @@
   notify:
     - restart postfix service
   tags:
-    - cert
+    - postfix_config
