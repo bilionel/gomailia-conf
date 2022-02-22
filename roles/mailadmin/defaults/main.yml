@@ -30,4 +30,4 @@ apache2_alias_regexp_line: '        Alias /{{ postfixadmin_directory_name }}'
 apache2_servername_regexp_line: '        ServerName '
 apache2_servername_line_postfixadmin: '        ServerName {{ site_domain }}'
 apache2_alias_line_postfixadmin: '        Alias /{{ postfixadmin_directory_name }} {{ postfixadmin_webfolder }}/{{ postfix_public_dir }}'
- 
+apache2_alias_line_mailadmin_ssl: '                Alias /{{ mailadmin_directory_name }} {{ mailadmin_webfolder }}/{{ mailadmin_public_folder }}' 

@@ -122,3 +122,16 @@
     - restart apache2 service
   tags:
     - apache2
+
+- name: add alias for mailadmin url in default https site
+  lineinfile:
+    backup: yes
+    firstmatch: yes
+    regexp: '{{ apache2_alias_regexp_line }}' 
+    insertafter: '{{ apache2_conf_document_root_line }}'
+    line: '{{ apache2_alias_line_mailadmin_ssl }}'
+    path: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
+  notify:
+    - restart apache2 service
+  tags:
+    - apache2
