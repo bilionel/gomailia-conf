@@ -6,13 +6,15 @@
     name: "{{ item }}"
     state: present
   loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
 
 - name: create packages folder
   file:
     state: directory
     path: '{{ packages_dir }}'
   tags:
-    - postfixadmin
+    - install
   
 - name: download git repository for postfixadmin
   ansible.builtin.git:
@@ -21,4 +23,4 @@
 
     version: '{{ postfixadmin_version }}'
   tags:
-    - postfixadmin
+    - install
