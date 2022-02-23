@@ -18,7 +18,7 @@
     owner: '{{ apache2_system_user }}'
     path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ account_key_file_name }}'
   tags:
-      - ssl
+    - ssl
 
 - name: create key for csr request
   community.crypto.openssl_privatekey:
@@ -28,7 +28,7 @@
     owner: '{{ apache2_system_user }}'
     path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_key_file_name }}'
   tags:
-      - ssl
+    - ssl
 
 - name: create csr file for {{ site_domain }}
   community.crypto.openssl_csr:
@@ -43,7 +43,7 @@
     owner: '{{ apache2_system_user }}'
     path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}/{{ csr_file_name }}'
   tags:
-      - ssl
+    - ssl
 
 - name: Create a challenge for {{ site_domain }} using an account key file.
   community.crypto.acme_certificate:
@@ -55,7 +55,7 @@
     terms_agreed: yes
   register: sample_com_challenge
   tags:
-      - ssl
+    - ssl
 
 - name: create acme challenge directories
   file:
@@ -70,7 +70,7 @@
     content: "{{ sample_com_challenge['challenge_data'][site_domain]['http-01']['resource_value'] }}"
   when: sample_com_challenge is changed and  site_domain in sample_com_challenge['challenge_data']
   tags:
-      - ssl
+    - ssl
 
 - name: Create a certificate for {{ site_domain }} site using an account key file.
   community.crypto.acme_certificate:
@@ -82,27 +82,7 @@
     data: '{{ sample_com_challenge }}'
     terms_agreed: yes
   tags:
-      - ssl
-
-#- name: copy configuration file for http default site
-#  template:
-#    src: '{{ apache2_default_http_config_file }}.j2'
-#    dest: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
-#  notify:
-#    - restart apache2 service
-#  tags:
-#    - conf_apache
-#    - ssl
-
-#- name: copy configuration file for https default site
-#  template:
-#    src: '{{ apache2_default_https_config_file }}.j2'
-#    dest: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
-#  notify:
-#    - restart apache2 service
-#  tags:
-#    - conf_apache
-#    - ssl
+    - ssl
 
 - name: enable ssl module on apache
   apache2_module:
@@ -111,7 +91,6 @@
   notify:
     - restart apache2 service
   tags:
-    - conf_apache
     - ssl
 
 - name: enable https default site
@@ -120,7 +99,6 @@
   notify:
     - restart apache2 service
   tags:
-    - conf_apache
     - ssl
 
 - name: change defaut certificate files for {{ site_domain }}
@@ -160,5 +138,4 @@
   notify:
     - restart apache2 service
   tags:
-    - postfixadmin
-    - current
+    - apache2
