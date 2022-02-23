@@ -11,7 +11,7 @@
   notify:
     - restart postfix service
   tags:
-    - map_config_file
+    - postfix_config
 
 
 - name: create virtual mail system group
@@ -19,7 +19,7 @@
     name: '{{ vmail_system_user }}'
     state: present
   tags:
-    - create_user
+    - postfix_config
 
 - name: create virtual mail system user
   user:
@@ -28,14 +28,14 @@
     groups: '{{ vmail_groups }}'
     home: /home/{{ vmail_system_user }}
   tags:
-    - create_user
+    - postfix_config
 
 - name: Get postfix system user '{{ vmail_system_user }}' user info
   getent:
     database: passwd
     key: '{{ vmail_system_user }}'
   tags:
-    - current_tasks
+    - postfix_config
 
 - name: configure postfix with mysql maps
   blockinfile:
@@ -46,8 +46,7 @@
   notify:
     - restart postfix service
   tags:
-    - configure_postfix
-    - current_tasks
+    - postfix_config
 
 - name: configure spectific parameter of postfix
   lineinfile:
@@ -55,7 +54,7 @@
     regexp: '^myhostname ='
     line: myhostname = {{ mailserver_hostname }}
   tags:
-    - configure_postfix
+    - postfix_config
   notify: 
     - restart postfix service
 
@@ -71,7 +70,7 @@
   notify:
     - restart postfix service
   tags:
-    - imap_lmtp_service
+    - postfix_config
 
 - name: modify postfix main config file for dovecot auth service
   lineinfile:
@@ -87,7 +86,7 @@
   notify:
     - restart postfix service
   tags:
-    - imap_auth_service
+    - postfix_config
 
 - name: enable submission service on postfix
   lineinfile:
@@ -98,14 +97,14 @@
   notify:
     - restart postfix service
   tags:
-    - postfix_system_user
+    - postfix_config
 
 - name: Check if apache service is present on system
   stat: 
     path: '{{lib_services_folder}}/{{ apache_service_name }}'
   register: service_status
   tags:
-    - cert
+    - ssl
 
 - name: stop apache service
   service:
@@ -115,7 +114,7 @@
   notify:
     - restart apache service
   tags:
-    - cert
+    - ssl
 
 - name: generate certificate for dovecot services
   shell:
@@ -130,8 +129,7 @@
   args:
     chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
   tags:
-    - current_tasks
-    - cert
+    - ssl
 
 - name: configure smtp service with tls
   lineinfile:
@@ -142,4 +140,4 @@
   notify:
     - restart postfix service
   tags:
-    - cert
+    - ssl
