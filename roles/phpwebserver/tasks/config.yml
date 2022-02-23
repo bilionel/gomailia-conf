@@ -84,26 +84,6 @@
   tags:
       - ssl
 
-#- name: copy configuration file for http default site
-#  template:
-#    src: '{{ apache2_default_http_config_file }}.j2'
-#    dest: '{{ apache2_site_available }}/{{ apache2_default_http_config_file }}'
-#  notify:
-#    - restart apache2 service
-#  tags:
-#    - conf_apache
-#    - ssl
-
-#- name: copy configuration file for https default site
-#  template:
-#    src: '{{ apache2_default_https_config_file }}.j2'
-#    dest: '{{ apache2_site_available }}/{{ apache2_default_https_config_file }}'
-#  notify:
-#    - restart apache2 service
-#  tags:
-#    - conf_apache
-#    - ssl
-
 - name: enable ssl module on apache
   apache2_module:
     name: ssl
