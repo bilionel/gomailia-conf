@@ -5,3 +5,5 @@
     name: "{{ item }}"
     state: present
   loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
