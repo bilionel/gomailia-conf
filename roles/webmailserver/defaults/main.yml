@@ -17,7 +17,6 @@ database_name: ldaproundcubemail
 database_creation_script: createdb.sql
 time_zone: Africa/Douala
 mysql_initialize_roundcube_script: mysql.initial.sql
-
 site_domain: ldap.gomail.life
 
 # certificate
