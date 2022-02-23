@@ -9,7 +9,7 @@
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
   tags:
-    - roundcube_install
+    - roundcube_config
 
 - name: create roundcube website directory
   file:
@@ -19,7 +19,7 @@
     group: '{{ webmail_system_user }}'
     recurse: yes
   tags:
-    - roundcube_install
+    - roundcube_config
 
 - name: create roundcube website
   copy:
@@ -36,7 +36,7 @@
     src: createdb.sql
     dest: /tmp
   tags:
-    - roundcube_install
+    - roundcube_config
 
 - name: create roundcube database and database user
   shell:
