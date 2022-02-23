@@ -6,7 +6,11 @@
     name: "{{ item }}"
     state: present
   loop: "{{ phpwebserver_packages_list }}"
+  tags:
+    - install
 
 - name: install cryptography with pip
   pip:
     name: cryptography
+  tags:
+    - install
