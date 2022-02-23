@@ -127,7 +127,7 @@
   tags:
     - ssl
 
-- name: add site name {{site_domain }} for mailadmin
+- name: add site name {{site_domain }} to web server
   lineinfile:
     backup: yes
     firstmatch: yes
