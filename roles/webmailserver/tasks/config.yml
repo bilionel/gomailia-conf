@@ -8,27 +8,35 @@
     dest:  '{{ packages_folder }}'
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
+  tags:
+    - apache2
 
 - name: create roundcube website directory
   file:
-    path: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    path: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     state: directory
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
     recurse: yes
+  tags:
+    - apache2
 
 - name: create roundcube website
   copy:
     remote_src: yes
     src: '{{ packages_folder }}/{{ roundcube_extracted_folder_name }}'
-    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    dest: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
+  tags:
+    - apache2
 
 - name: copy database creation script
   copy:
     src: createdb.sql
     dest: /tmp
+  tags:
+    - roundcube_config
 
 - name: create roundcube database and database user
   shell:
@@ -36,23 +44,25 @@
   environment:
     MYSQL_PWD: '{{ database_root_password }}'
   run_once: true 
+  tags:
+    - roundcube_config
 
 - name: change database initialization script
   copy:
     src: '{{ mysql_initialize_roundcube_script }}'
-    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
+    dest: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
     backup: yes
   tags:
-    - current_tasks
+    - roundcube_config
 
 - name: intialize roundcube database
   shell:
-    cmd: mysql -h {{ database_host }} -u {{ database_rw_user }}  {{ database_name }} < {{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_initialize_db_script }}
+    cmd: mysql -h {{ database_host }} -u {{ database_rw_user }}  {{ database_name }} < {{ apache2_root_folder }}/{{ roundcube_folder_name }}/{{ roundcube_initialize_db_script }}
   environment:
     MYSQL_PWD: '{{ database_rw_password }}'
   run_once: true
   tags:
-    - current_tasks
+    - roundcube_config
 
 - name: set php data.timezone
   lineinfile:
@@ -61,6 +71,8 @@
     line: 'date.timezone = {{ time_zone }}'
   notify:
     - restart apache2 service
+  tags:
+    - apache2
 
 
 - name: add site name {{site_domain }} for webmail server
@@ -74,5 +86,4 @@
   notify:
     - restart apache2 service
   tags:
-    - postfixadmin
-    - current
+    - apache2
