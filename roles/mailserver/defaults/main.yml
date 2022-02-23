@@ -22,7 +22,7 @@ map_configuration_files_list:
   - '{{ virtual_mailbox_limit_conf_file }}'
   - '{{ relay_domains_maps_conf_file }}'
 
-postfix_config_directory: /etc/postfix/
+postfix_config_directory: /etc/postfix
 
 
 postfix_database_name: postfix
@@ -43,16 +43,15 @@ relay_domain_select_field: domain
 relay_domain_where_field: domain
 
 vmail_system_user: vmail
-vmail: test
 vmail_groups: 
   - sasl
 
 virtual_mailbox_domain_settings: |
   # Virtual Mailbox Domain Settings
 
-  virtual_alias_maps = mysql:/etc/postfix/{{ virtual_alias_conf_file }}
-  virtual_mailbox_domains = mysql:/etc/postfix/{{ virtual_domain_conf_file }}
-  virtual_mailbox_maps = mysql:/etc/postfix/{{ virtual_mailbox_conf_file }}
+  virtual_alias_maps = mysql:{{ postfix_config_directory }}/{{ virtual_alias_conf_file }}
+  virtual_mailbox_domains = mysql:{{ postfix_config_directory }}/{{ virtual_domain_conf_file }}
+  virtual_mailbox_maps = mysql:{{ postfix_config_directory }}/{{ virtual_mailbox_conf_file }}
   virtual_mailbox_limit = 51200000
   virtual_minimum_uid = {{ system_virtual_minimum_uid }}
   virtual_uid_maps = static:{{ getent_passwd[vmail_system_user].1 }}
@@ -65,13 +64,13 @@ quota_support_settings: |
   
   virtual_create_maildirsize = yes
   virtual_mailbox_extended = yes
-  virtual_mailbox_limit_maps = mysql:/etc/postfix/{{ virtual_mailbox_limit_conf_file }}
+  virtual_mailbox_limit_maps = mysql:{{ postfix_config_directory }}/{{ virtual_mailbox_limit_conf_file }}
   virtual_mailbox_limit_override = yes
   virtual_maildir_limit_message = Sorry, the your maildir has overdrawn your diskspace quota, please free up some of spaces of your mailbox try again.
   virtual_overquota_bounce = yes
 system_virtual_minimum_uid: 1000
-postfix_config_file: /etc/postfix/main.cf
-postfix_master_config_file: /etc/postfix/master.cf
+postfix_config_file: '{{ postfix_config_directory }}/main.cf'
+postfix_master_config_file: '{{ postfix_config_directory }}/master.cf'
 mailserver_hostname: ec2-3-142-247-108.us-east-2.compute.amazonaws.com
 
 enable_submission_service_line:
@@ -81,9 +80,9 @@ enable_submission_service_line:
 lmtp_port: 24
 dovecot_auth_port: 12345
 
-letsencrypt_cert_folder: /etc/letsencrypt/archive/
+letsencrypt_cert_folder: /etc/letsencrypt/archive
 site_smtp_domain: smtp.gomail.life
-cert_folder_path: /etc/pki/cert/
+cert_folder_path: /etc/pki/cert
 private_cert_folder_name: private
 csr_key_file_name :  '{{ site_imap_domain }}_csr.key'
 support_email: blionnel15@gmail.com
