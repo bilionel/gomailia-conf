@@ -13,7 +13,7 @@
 
 - name: create roundcube website directory
   file:
-    path: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    path: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     state: directory
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
@@ -25,7 +25,7 @@
   copy:
     remote_src: yes
     src: '{{ packages_folder }}/{{ roundcube_extracted_folder_name }}'
-    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}'
+    dest: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     owner: '{{ webmail_system_user }}'
     group: '{{ webmail_system_user }}'
   tags:
@@ -50,14 +50,14 @@
 - name: change database initialization script
   copy:
     src: '{{ mysql_initialize_roundcube_script }}'
-    dest: '{{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
+    dest: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/{{ roundcube_sql_script_folder }}'
     backup: yes
   tags:
     - roundcube_config
 
 - name: intialize roundcube database
   shell:
-    cmd: mysql -h {{ database_host }} -u {{ database_rw_user }}  {{ database_name }} < {{ apache2_web_directory }}/{{ roundcube_folder_name }}/{{ roundcube_initialize_db_script }}
+    cmd: mysql -h {{ database_host }} -u {{ database_rw_user }}  {{ database_name }} < {{ apache2_root_folder }}/{{ roundcube_folder_name }}/{{ roundcube_initialize_db_script }}
   environment:
     MYSQL_PWD: '{{ database_rw_password }}'
   run_once: true
