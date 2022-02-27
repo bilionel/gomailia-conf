@@ -1,0 +1,79 @@
+---
+
+- name: open firewall ports for jitsi server
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
+
+- name: stop nginx service
+  service:
+    name: '{{ nginx_service_name }}'
+    state: stopped
+  notify:
+    - restart nginx service
+  tags:
+    - jitsi_certificate
+
+- name: create private cert folder
+  file:
+    path: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+    state: directory
+  tags:
+    - jitsi_certificate
+
+- name: generate certificate for jitsi meet server
+  shell:
+    cmd: > 
+      certbot
+      certonly
+      --standalone
+      --non-interactive
+      --agree-tos
+      -m {{ support_email }}
+      -d {{ instanmessage_site_domain }}
+  args:
+    chdir: '{{ cert_folder_path }}/{{ private_cert_folder_name }}'
+  tags:
+    - jitsi_certificate
+
+- name: copy jitsy reset server script
+  copy:
+   src: '{{ jitsi_reset_install_script }}'
+   dest: '{{ jitsi_reset_install_script_folder }}'
+   mode: '744'
+  tags:
+    - jitsi_reset
+
+- name: set hostname to {{ instanmessage_site_domain }} for jitsi server
+  shell:
+    cmd: hostnamectl set-hostname {{ instanmessage_site_domain }}
+  tags:
+   - jitsi_config
+
+- name: configure debconf variable for automatic install of jitsi server
+  ansible.builtin.debconf:
+    name: '{{ item.name }}'
+    question: '{{ item.question }}'
+    value: '{{ item.value }}'
+    vtype: '{{ item.vtype }}'
+  with_items:
+    - {name: 'jitsi-meet-turnserver' , question: 'jitsi-videobridge/jvb-hostname', value: '{{ instanmessage_site_domain }}', vtype: string }
+    - {name: 'jitsi-meet-web-config' , question: 'jitsi-meet/cert-choice', value: '{{ jitsi_cert_choice }}', vtype: string }
+    - {name: 'jitsi-meet-web-config' , question: 'jitsi-meet/cert-path-key', value: '{{ jitsi_ssl_key }}', vtype: string }
+    - {name: 'jitsi-meet-web-config' , question: 'jitsi-meet/cert-path-crt', value: '{{ jitsi_ssl_cert }}', vtype: string }
+  tags:
+    - jitsi_config
+
+- name: install jitsi meet server package
+  package:
+    name: jitsi-meet
+    state: present
+  tags:
+    - jitsi_install
