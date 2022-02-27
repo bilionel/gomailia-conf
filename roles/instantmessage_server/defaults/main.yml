@@ -1,0 +1,41 @@
+---
+# defaults file for instanmessage_server
+
+ubuntu_packages_list:
+  - nginx
+  - curl
+  - wget
+  - openjdk-11-jdk
+  - apt-transport-https
+  - certbot
+
+
+# jitsi repo
+jitsi_gpg_key: https://download.jitsi.org/jitsi-key.gpg.key
+jitsi_gpg_file: /usr/share/keyrings/jitsi-keyring.gpg
+jitsi_repo_url: https://download.jitsi.org stable/
+
+
+#
+target_ufw_config:
+  - {protocol: tcp, rule: allow, port: 80  }
+  - {protocol: tcp, rule: allow, port: 443  }
+  - {protocol: udp, rule: allow, port: 10000  }
+  - {protocol: tcp, rule: allow, port: 22  }
+  - {protocol: udp, rule: allow, port: 3478  }
+  - {protocol: tcp, rule: allow, port: 5349  }
+
+nginx_service_name: nginx
+
+# certificate
+instanmessage_site_domain: meet.gomail.life
+cert_folder_root_path: /etc/letsencrypt/live
+private_cert_folder_name: private
+support_email: blionnel15@gmail.com
+jitsi_ssl_key: '{{ cert_folder_root_path }}/{{ instanmessage_site_domain }}/privkey.pem'
+jitsi_ssl_cert: '{{ cert_folder_root_path }}/{{ instanmessage_site_domain }}/fullchain.pem'
+
+
+jitsi_reset_install_script: start-over.sh
+jitsi_reset_install_script_folder: /tmp
+jitsi_cert_choice: I want to use my own certificate
