@@ -1,0 +1,5 @@
+---
+
+- hosts: rocketchat_server
+  roles:
+    - rocket_chat
