@@ -1,0 +1,39 @@
+---
+
+- name: update apt packages cache
+  apt:
+    update_cache: yes
+  tags:
+    - install
+
+- name: install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
+
+- name: add universe repository
+  shell:
+    cmd: apt-add-repository universe
+  tags:
+    - install
+
+- name: add gpg key for jitsi meet
+  shell:
+    cmd: curl {{ jitsi_gpg_key }} | sudo sh -c 'gpg --dearmor > {{ jitsi_gpg_file }}'
+  tags:
+    - jitsi_repo
+    - install
+
+- name: add jitsi server repository
+  apt_repository:
+    install_python_apt: yes
+    repo: deb [signed-by={{ jitsi_gpg_file }}] {{ jitsi_repo_url }}
+    state: present
+    update_cache: yes
+    validate_certs: yes
+  tags:
+    - install
+    - jitsi_repo
