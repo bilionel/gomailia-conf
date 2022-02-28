@@ -1,0 +1,80 @@
+---
+
+
+- name: create rocket chat user group
+  group:
+    name: '{{ rocket_chat_system_user_group }}'
+  tags:
+    - rocket_chat_config
+
+- name: create rocket chat user
+  user:
+    name: '{{ rocket_chat_system_user }}'
+    group: '{{ rocket_chat_system_user_group }}'
+    password_lock: yes
+  tags:
+    - rocket_chat_config
+
+- name: move rocket.chat application folder
+  copy:
+    remote_src: yes
+    src: '{{ packages_folder }}/{{rocket_chat_folder_name }}/bundle/'
+    dest: '{{ rocket_chat_target_folder }}'
+    owner: '{{ rocket_chat_system_user }}'
+    group: '{{ rocket_chat_system_user_group }}'
+  tags:
+    - rocket_chat_config
+
+- name: copy rocket chat service configuration file
+  template:
+    src: '{{ rocket_chat_service_file }}.j2'
+    dest: '{{ system_service_dir }}/{{ rocket_chat_service_file }}'
+  tags:
+    - rocket_chat_config
+    - current
+  notify: restart rocketchat service
+
+- name: copy mongo template configuration file
+  template:
+    src: '{{ mongod_config_file }}.j2'
+    dest: '{{ mongod_config_file_path }}'
+  tags:
+    - rocket_chat_config
+    - mongod_conf
+  notify:
+    - restart mongodb service
+
+- name: enable mongodb service
+  service:
+    name: '{{ mongod_service_name }}'
+    enabled: yes
+  tags:
+    - rocket_chat_config
+    - mongod_conf
+    - enable_mongod
+  notify:
+    - restart mongodb service  
+
+- name: initialize mongodb replicaset
+  mongodb_replicaset:
+    replica_set: '{{ mongod_replicaset_name }}'
+    members: '{{ mongod_replica_member }}'
+    validate: no
+  tags:
+    - rocket_chat_config
+    - mongod_conf
+  notify:
+    - restart mongodb service
+
+- name: open firewall ports for rocket chat server
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
+    - rocket_chat_config
