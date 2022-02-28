@@ -1,0 +1,5 @@
+---
+
+- hosts: seafile_server
+  roles:
+    - seafile
