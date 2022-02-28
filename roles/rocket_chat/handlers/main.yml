@@ -1,0 +1,15 @@
+---
+# handlers file for rocket_chat
+
+- name: restart mongodb service
+  service:
+    name: mongod
+    state: restarted
+    enabled: yes
+  notify: restart rocketchat service
+
+- name: restart rocketchat service
+  service:
+    name: rocketchat
+    state: restarted
+    enabled: yes
