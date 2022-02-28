@@ -1,0 +1,55 @@
+---
+# defaults file for rocket_chat
+
+ubuntu_packages_list:
+  - build-essential
+  - mongodb-org-mongos=4.0.9
+  - mongodb-org-server=4.0.9
+  - mongodb-org-shell=4.0.9
+  - mongodb-org-tools=4.0.9
+  - pip
+  - nodejs
+  - graphicsmagick
+
+ubuntu_keyserver_url: hkp://keyserver.ubuntu.com:80
+recev_value: 9DA31620334BD75D9DCB49F368818C72E52529D4
+mongo_repo_url: https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse
+node_js_url: https://deb.nodesource.com/{{ node_js_setup_file }}
+rocket_chat_url: https://releases.rocket.chat/{{ rocket_chat_version }}/download
+node_js_setup_file: setup_12.x
+packages_folder: /tmp
+rocket_chat_target_folder: /opt/Rocket.Chat  
+rocket_chat_version: 4.1.2
+rocket_chat_package_name: rocket.chat-{{ rocket_chat_version }}.tgz
+rocket_chat_folder_name: rocket.chat
+rocket_chat_server_folder: '{{ packages_folder }}/{{ rocket_chat_folder_name }}/bundle/programs/server'
+system_user_group: '{{ system_user }}'
+system_user: ubuntu
+rocket_chat_system_user: rocketchat
+rocket_chat_system_user_group: '{{ rocket_chat_system_user }}'
+rocket_chat_service_file: rocketchat.service
+system_service_dir: /lib/systemd/system
+mongodb_config_file_path: /etc/mongod.conf
+node_bin_path: /usr/bin/node
+#chat_domain_site: chat.gomail.life
+chat_domain_site: localhost
+
+# firewall
+target_ufw_config:
+  - { protocol: tcp, rule: allow, port: 3000 }
+  - { protocol: tcp, rule: allow, port: 22 }
+
+# mongod
+mongod_replsetname: rs01
+mongod_engine: mmapv1
+mongod_smallfiles: 'true'
+mongod_config_file: mongod.conf
+mongod_dbpath: /var/lib/mongodb
+mongod_log_file_path: /var/log/mongodb/mongod.log
+mongod_timezone_file_path: /usr/share/zoneinfo
+mongod_port: 27017
+mongod_bindIP: 127.0.0.1
+mongod_config_file_path: '/etc/{{ mongod_config_file }}'
+mongod_replicaset_name: rs01
+mongod_service_name: /lib/systemd/system/mongod.service
+mongod_replica_member: localhost:{{ mongod_port }}
