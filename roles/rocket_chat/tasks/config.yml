@@ -78,3 +78,25 @@
   tags:
     - firewall
     - rocket_chat_config
+
+- name: copy nginx site default configuration file
+  template:
+    src: '{{ nginx_default_config_file }}.j2'
+    dest: '{{ nginx_default_config_file_path }}'
+  tags:
+    - rocket_chat_config
+    - nginx
+
+- name: create {{ chat_domain_site }} certificate add to nginx and redirect http to https
+  shell:
+    cmd: > 
+      certbot
+      --nginx
+      --non-interactive
+      --agree-tos
+      --redirect
+      -m {{ support_email }}
+      -d {{ chat_domain_site }}
+  tags:
+    - rocket_chat_config
+    - nginx
