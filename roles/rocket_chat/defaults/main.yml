@@ -31,12 +31,14 @@ rocket_chat_service_file: rocketchat.service
 system_service_dir: /lib/systemd/system
 mongodb_config_file_path: /etc/mongod.conf
 node_bin_path: /usr/bin/node
-#chat_domain_site: chat.gomail.life
-chat_domain_site: localhost
+chat_domain_site: chat.gomail.life
+#chat_domain_site: localhost
 
 # firewall
 target_ufw_config:
   - { protocol: tcp, rule: allow, port: 3000 }
+  - { protocol: tcp, rule: allow, port: 80 }
+  - { protocol: tcp, rule: allow, port: 443 }
   - { protocol: tcp, rule: allow, port: 22 }
 
 # mongod
@@ -53,3 +55,8 @@ mongod_config_file_path: '/etc/{{ mongod_config_file }}'
 mongod_replicaset_name: rs01
 mongod_service_name: /lib/systemd/system/mongod.service
 mongod_replica_member: localhost:{{ mongod_port }}
+
+# nginx
+nginx_default_config_file: default
+nginx_default_config_file_path: /etc/nginx/sites-enabled/{{ nginx_default_config_file }}
+support_email: blionnel15@gmail.com
