@@ -1,2 +1,8 @@
 ---
 # tasks file for seafile
+
+- name: install packages
+  import_tasks: packages.yml
+
+- name: configure applications
+  import_tasks: config.yml
