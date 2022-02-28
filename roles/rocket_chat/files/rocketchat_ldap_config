@@ -1,0 +1,23 @@
+type de serveur: Autre
+hote: ldap.gomail.life
+Port: 389
+reconnecter: oui
+
+# authentification
+Activer: oui
+DN utilisateur: cn=vmail,o=hosting,dc=gomail,dc=life
+Mot de passe: xxxxxxxx
+
+# filtre de recherche
+DN de base: o=hosting,dc=gomail,dc=life
+Filtre: (objectclass=VirtualMailAccount)
+portée: sub
+champ: mail
+
+# synchronisation des données
+Mettre à jour les données utilisateur lors de la connexion: oui
+
+# Mapping
+champ du nom d'utilisateur: cn
+champ e-mail: mail
+champ nom: cn
