@@ -1,0 +1,93 @@
+---
+
+- name: update apt packages cache
+  apt:
+    update_cache: yes
+  tags:
+    - install
+
+- name: add ubuntu key server
+  shell:
+    cmd: apt-key adv --keyserver {{ ubuntu_keyserver_url }} --recv {{ recev_value }}
+  tags:
+    - install 
+
+- name: add mongo server repository
+  apt_repository:
+    install_python_apt: yes
+    repo: deb [ arch=amd64 ] {{ mongo_repo_url }}
+    filename: mongodb-org-4.0.list
+    state: present
+    update_cache: yes
+    validate_certs: yes
+  tags:
+    - install
+
+- name: download node.js installer
+  get_url:
+    url: '{{ node_js_url }}'
+    dest: '{{ packages_folder }}'
+    mode: '744'
+  tags:
+    - install
+    - current_task
+
+
+- name: install nodejs with setup file
+  shell:
+    cmd: '{{ packages_folder }}/{{ node_js_setup_file }}'
+  tags:
+    - install
+    - current_task
+
+- name: install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
+    - install_package
+  
+- name: install pymongo python module
+  pip:
+    name: pymongo
+  tags:
+    - install
+    - install_pymongo
+
+- name: download rocket chat package
+  get_url:
+    url: '{{ rocket_chat_url }}'
+    dest: '{{ packages_folder }}'
+  tags:
+    - install
+
+- name: create rocket chat folder
+  file:
+    path: '{{ packages_folder }}/{{rocket_chat_folder_name }}'
+    state: directory
+    owner: '{{ system_user }}'
+    group: '{{ system_user_group }}'
+    recurse: yes
+  tags:
+    - install
+     
+
+- name: unzip rocket chat package
+  unarchive:
+    remote_src: yes
+    src: '{{ packages_folder }}/{{rocket_chat_package_name }}'
+    dest: '{{ packages_folder }}/{{rocket_chat_folder_name }}'
+    owner: '{{ system_user }}'
+    group: '{{ system_user_group }}'
+  tags:
+    - install
+
+- name: install rocket.chat nodejs server
+  shell:
+    cmd: npm install
+    chdir: '{{ rocket_chat_server_folder }}'
+  tags:
+    - install
+    
