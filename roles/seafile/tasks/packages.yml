@@ -1,0 +1,16 @@
+---
+
+- name: update apt packages cache
+  apt:
+    update_cache: yes
+  tags:
+    - install
+
+- name: install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
+    - install_package
