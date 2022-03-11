@@ -73,3 +73,21 @@
     - restart apache2 service
   tags:
     - roundcube_config
+
+- name: download custom skins for roundcube
+  ansible.builtin.git:
+    repo: '{{ item.url }}'
+    dest: '{{ roundcube_skin_directory }}/{{ item.skin_name }}'
+  with_items: '{{ custom_skin_list }}' 
+  tags:
+    - roundcube_config
+    - now
+
+- name: change default skin for roundcube
+  lineinfile:
+    path: '{{ roundcube_default_config_file }}'
+    regexp: '^\$config\[''skin''\] ='
+    line: "$config['skin'] = '{{ default_skin }}';"
+  tags:
+    - roundcube_config
+    - now
