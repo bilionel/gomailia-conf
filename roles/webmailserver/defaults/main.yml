@@ -28,3 +28,10 @@ organizationalunitname: mailservice
 # apache2
 apache2_servername_regexp_line: '        ServerName '
 apache2_servername_line_mailadmin: '        ServerName {{ site_domain }}'
+
+# skins
+custom_skin_list:
+  - { url: https://github.com/roundcubevnz/roundcube-skin-chameleon.git, skin_name: chameleon }
+roundcube_skin_directory: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/skins/'
+default_skin: chameleon
+roundcube_default_config_file: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/config/defaults.inc.php'
