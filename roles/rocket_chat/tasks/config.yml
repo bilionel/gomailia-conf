@@ -87,7 +87,7 @@
     - rocket_chat_config
     - nginx
 
-- name: create {{ chat_domain_site }} certificate add to nginx and redirect http to https
+- name: create {{ chat_domain_site }} certificate, add to nginx and redirect http to https
   shell:
     cmd: > 
       certbot
