@@ -1,0 +1,280 @@
+---
+
+- name: create seafile system group
+  group:
+    name: '{{ seafile_system_group }}'
+  tags:
+    - seafile_system_config
+
+- name: create seafile system user
+  user:
+    name: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}'
+  tags:
+    - seafile_system_config
+
+- name: create packages folder
+  file:
+    path: '{{ packages_folder }}'
+    state: directory
+  tags:
+    - seafile_package
+
+- name: Download seafile package
+  get_url:
+    url: '{{ seafile_package_url }}'
+    dest: '{{ packages_folder }}'
+    owner: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}'
+  tags:
+    - seafile_package
+
+- name: unarchive seafile package
+  unarchive:
+    remote_src: yes
+    src: '{{ packages_folder }}/{{ seafile_package_name }}'
+    dest: '{{ packages_folder }}'
+    owner: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}' 
+  tags:
+    - seafile_package
+
+- name: set recursive permission on seafile package folder
+  file:
+    path: '{{ packages_folder }}/{{ seafile_folder_name }}'
+    state: directory
+    recurse: yes
+    owner: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}' 
+  tags:
+    - seafile_package
+
+- name: copy database creation script for seafile
+  copy:
+    src: '{{ database_creation_script }}'
+    dest: '{{ packages_folder }}/{{ seafile_folder_name }}/'
+  tags:
+    - seafile_database 
+
+- name: create seafile databases
+  shell:
+    cmd: mysql -h {{ database_host }} -u {{ database_root_user }}  < {{ packages_folder }}/{{ seafile_folder_name }}/{{ database_creation_script }}
+  environment:
+    MYSQL_PWD: '{{ database_root_password }}'
+  run_once: true
+  tags:
+    - seafile_database
+
+
+- name: copy script to install seafile with mysql
+  template:
+    src: '{{ seafile_install_script_file }}.j2'
+    dest: '{{ packages_folder }}/{{ seafile_folder_name }}/{{ seafile_install_script_file }}'
+    mode: '755'
+  tags:
+    - seafile_config
+
+- name: get the presence of ccnet folder
+  stat:
+    path: '{{ packages_folder }}/ccnet'
+  register: status_ccnet_folder
+  tags:
+    - seafile_config
+
+- name: execute scripted install of seafile
+  shell:
+    chdir: '{{ packages_folder }}/{{ seafile_folder_name }}' 
+    cmd: './{{ seafile_install_script_file }}'
+  environment:
+    seafile_db_password: '{{ seafile_database_password }}'
+  when: not status_ccnet_folder.stat.exists
+  tags:
+    - seafile_config
+
+- name: get number of rows in EmailUser on ccnet database
+  community.mysql.mysql_query:
+    login_host: '{{ database_host }}'
+    login_db: '{{ seafile_ccnet_database_name }}'
+    login_user: '{{ seafile_database_username }}'
+    login_password: '{{ seafile_database_password }}'
+    query: '{{ query_users }}'
+  register: seafile_email_users
+  tags:
+    - seafile_config
+
+- name: start seafile server for the first time
+  shell:
+     chdir: '{{ packages_folder }}/{{ seafile_folder_name }}' 
+     cmd: './{{ seafile_start_script }} start'
+  when: seafile_email_users.rowcount[0]==0
+  tags:
+    - seafile_config
+
+- name: start seahub server for the first time
+  expect:
+    chdir: '{{ packages_folder }}/{{ seafile_folder_name }}'
+    command: '/bin/bash -c "./{{ seahub_start_script }} start" '
+    responses:
+      (?i)\[ admin email \] : '{{ seahub_admin_email }}'
+      (?i)\[ admin password \] : '{{ seahub_admin_password }}'
+      (?i)\[ admin password again \] : '{{ seahub_admin_password }}'
+    echo: yes
+  when: seafile_email_users.rowcount[0]==0
+  notify: 
+    - stop seahub server for the first time
+    - stop seafile server for the first time
+  tags:
+    - seafile_config
+
+- name: execute handlers 
+  meta: flush_handlers
+
+- name: give full permission to {{ seafile_system_user }} on all seafile folders
+  file:
+    path: '{{ packages_folder }}/{{ item }}'
+    state: directory
+    recurse: yes
+    owner: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}'
+  with_items: '{{ seafile_folders_list }}' 
+  tags:
+    - seafile_config
+
+- name: add ldap configuration to seafile
+  blockinfile:
+    path: '{{ ccnet_config_file_path }}'
+    block: '{{ ldap_target_config }}'
+  notify: start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+
+- name: give full permission to {{ seafile_system_user }} on seahub temp folder
+  file:
+    path: '{{ seafile_temp_folder_path }}'
+    state: directory
+    recurse: yes
+    owner: '{{ seafile_system_user }}'
+    group: '{{ seafile_system_group }}'
+  tags:
+    - seafile_config
+
+- name: clear seahub temp folder
+  file:
+    path: '{{ seafile_temp_folder_path }}/'
+    state: absent
+  tags:
+    - seafile_config
+
+- name: configure SERVICE_URL parameter
+  lineinfile:
+    path: '{{ seahub_config_file_path }}'
+    regexp: '^SERVICE_URL = '
+    line: '{{ service_url_line_config }}'
+  notify: start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+- name: configure FILE_SERVER_ROOT parameter
+  lineinfile:
+    path: '{{ seahub_config_file_path }}'
+    regexp: '^FILE_SERVER_ROOT = '
+    insertafter: '^SERVICE_URL = '
+    line: '{{ file_server_root_url_line_config }}'
+  notify: start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+- name: copy template configuration file for seahub
+  template:
+    src: '{{ seahub_config_file_name }}.j2'
+    dest: '{{ seahub_config_file_path }}'
+  notify:
+    - reload systemd daemon
+    - start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+- name: restrict access to file server only to nginx
+  lineinfile:
+    path: '{{ seafile_config_file_path }}'
+    insertafter: '^\[fileserver\]'
+    line: '{{ restrict_file_server_access_config }}'
+  notify: start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+- name: copy template files for seahub and seafile services
+  template:
+    src: '{{ item }}.service.j2'
+    dest: '{{ services_system_folder }}/{{ item }}.service'
+  with_items: '{{ seafile_services_list }}'
+  notify:
+    - reload systemd daemon
+    - start systemd sevices for seafile
+  tags:
+    - seafile_config
+
+- name: copy template configuration file for nginx
+  template:
+    src: '{{ nginx_seafile_web_config_file }}.j2'
+    dest: '{{ nginx_sites_available_folder }}/{{ nginx_seafile_web_config_file }}'
+  tags:
+    - seafile_config
+
+- name: disable default nginx site
+  file:
+    path: '{{ nginx_sites_enabled_folder }}/{{ nginx_default_web_config_file }}'
+    state: absent
+  notify: restart nginx service
+  tags:
+    - seafile_config
+
+- name: enable seafile site on nginx
+  file:
+    path: '{{ nginx_sites_enabled_folder }}/{{ nginx_seafile_web_config_file }}'
+    src: '{{ nginx_sites_available_folder }}/{{ nginx_seafile_web_config_file }}'
+    state: link
+  notify: restart nginx service
+  tags:
+    - seafile_config
+
+- name: create {{ seafile_server_domain_name }} certificate, add to nginx and redirect http to https
+  shell:
+    cmd: > 
+      certbot
+      --nginx
+      --non-interactive
+      --agree-tos
+      --redirect
+      -m {{ support_email }}
+      -d {{ seafile_server_domain_name }}
+  notify: restart nginx service
+  tags:
+    - seafile_config
+
+
+#- name: configure seafile and mysql databases
+#  expect:
+#    command: '/bin/bash -c {{ seafile_database_script_path }}'
+#    chdir: '{{ packages_folder }}//{{ seafile_folder_name }}'
+#    responses:
+#      \"\": 'enter'
+        #Press ENTER to continue\n-----------------------------------------------------------------\n: ''
+      #(.*)[ server name ] : '{{ seafile_server_name }}'
+        #(.*)[ This server's ip or domain ] : '{{ seafile_server_domain_name }}'
+        #(.*)[ default "8082" ] : ''
+        #(.*)[ 1 or 2 ] : '{{ seafile_database_choice }}'
+        #(.*)[ default "localhost" ] : '{{ database_host }}'
+        #(.*)[ default "%" ] : ''
+        #(.*)[ default "3306" ] : '{{ seafile_database_port }}'
+        #(.*)[ mysql user for seafile ] : '{{ seafile_database_username }}'
+        #(.*)[ password for seafile ] : '{{ seafile_database_password }}'
+        #(.*)[ ccnet database ] : '{{ seafile_ccnet_database_name }}'
+        #(.*)[ seafile database ] : '{{ seafile_database_name }}'
+        #(.*)[ seahub database ] : '{{ seafile_seahub_database_name }}'
+#    timeout: 30
+#    echo: yes
+#  register: prompt
+#  tags:
+#    - seafile_config#
