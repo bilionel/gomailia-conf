@@ -20,4 +20,7 @@ ec2-18-219-180-139.us-east-2.compute.amazonaws.com ansible_user=ubuntu
 ec2-18-117-144-155.us-east-2.compute.amazonaws.com ansible_user=ubuntu
 
 [seafile_server]
-ec2-18-191-167-159.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+ec2-18-116-41-80.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+
+[libreoffice_server]
+ec2-18-218-157-28.us-east-2.compute.amazonaws.com ansible_user=ubuntu
