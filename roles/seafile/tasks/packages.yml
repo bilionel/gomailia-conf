@@ -14,3 +14,11 @@
   tags:
     - install
     - install_package
+
+- name: install python libraries
+  pip:
+    name: '{{ item }}'
+  loop: "{{ python_packages_list }}"
+  tags:
+    - install
+    - install_package
