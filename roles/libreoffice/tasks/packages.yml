@@ -1,0 +1,49 @@
+---
+
+#- name: Add Docker’s official GPG key
+#  shell:
+#    cmd: curl -fsSL {{ docker_repo_key_url }} | sudo gpg --dearmor -o {{ docker_repo_key_path }}
+#  tags:
+#    - install
+
+- name: Add docker's official GPG key
+  ansible.builtin.apt_key:
+    url: '{{ docker_repo_key_url }}'
+    keyring: '{{ docker_repo_key_path }}'
+  tags:
+    - install
+
+- name: add Docker repository
+  apt_repository:
+    install_python_apt: yes
+    repo: "deb [arch={{ repo_architecture }} signed-by={{ docker_repo_key_path }}] {{ docker_repo_url }} {{ ansible_lsb.codename }} stable"
+    filename: docker
+    state: present
+    update_cache: yes
+    validate_certs: yes
+  tags:
+    - install
+    - install_now
+
+- name: update apt packages cache
+  apt:
+    update_cache: yes
+  tags:
+    - install
+
+- name: install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu_packages_list }}"
+  tags:
+    - install
+    - install_package
+
+- name: install python libraries
+  pip:
+    name: '{{ item }}'
+  loop: "{{ python_packages_list }}"
+  tags:
+    - install
+    - install_package

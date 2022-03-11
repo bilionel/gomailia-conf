@@ -1,0 +1,64 @@
+---
+
+- name: download libreoffice docker image
+  docker_image:
+    name: collabora/code
+    source: pull
+  tags:
+    - seafile_config
+
+- name: install libreoffice docker imager
+  docker_container:
+    name: officeonline
+    image: collabora/code
+    container_default_behavior: compatibility
+    published_ports: 9980:9980
+    tty: yes
+    env:
+      domain: '{{ seafile_domail_for_libreoffice }}'
+    restart: yes
+    capabilities:
+      - MKNOD
+  tags:
+    - seafile_config
+
+- name: copy template configuration file for nginx
+  template:
+    src: '{{ nginx_libreoffice_web_config_file }}.j2'
+    dest: '{{ nginx_sites_available_folder }}/{{ nginx_libreoffice_web_config_file }}'
+  tags:
+    - seafile_config
+    - now
+
+- name: disable default nginx site
+  file:
+    path: '{{ nginx_sites_enabled_folder }}/{{ nginx_default_web_config_file }}'
+    state: absent
+  notify: restart nginx service
+  tags:
+    - seafile_config
+    - now
+
+- name: enable libreoffice site on nginx
+  file:
+    path: '{{ nginx_sites_enabled_folder }}/{{ nginx_libreoffice_web_config_file }}'
+    src: '{{ nginx_sites_available_folder }}/{{ nginx_libreoffice_web_config_file }}'
+    state: link
+  notify: restart nginx service
+  tags:
+    - seafile_config
+    - now
+
+- name: create {{ libreoffice_domain_name }} certificate, add to nginx and redirect http to https
+  shell:
+    cmd: > 
+      certbot
+      --nginx
+      --non-interactive
+      --agree-tos
+      -m {{ support_email }}
+      -d {{ libreoffice_domain_name }}
+  notify: restart nginx service
+  tags:
+    - seafile_config
+    - now
