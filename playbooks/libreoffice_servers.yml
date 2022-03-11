@@ -1,0 +1,5 @@
+---
+
+- hosts: libreoffice_server
+  roles:
+    - libreoffice
