@@ -1,0 +1,44 @@
+---
+# defaults file for seafile
+
+ubuntu_packages_list:
+  - nginx
+  - certbot
+  - python3-pip
+  - python3-certbot-nginx
+  - ca-certificates
+  - curl
+  - gnupg
+  - docker-ce 
+  - docker-ce-cli 
+  - containerd.io
+
+python_packages_list:
+  - docker
+
+
+packages_folder: /opt
+
+libreoffice_domain_name: office.gomail.life
+seafile_domail_for_libreoffice: 'drive\.gomail\.life'
+
+# certificate
+seahub_admin_email: blionnel15@gmail.com
+
+# nginx 
+nginx_libreoffice_web_config_file: libreoffice
+nginx_default_web_config_file: default
+nginx_sites_available_folder: /etc/nginx/sites-available
+libreoffice_local_url: https://127.0.0.1:9980
+nginx_sites_enabled_folder: /etc/nginx/sites-enabled
+support_email: '{{ seahub_admin_email }}'
+
+
+
+docker_repo_key_path: /usr/share/keyrings/docker-archive-keyring.gpg
+docker_repo_key_url: https://download.docker.com/linux/ubuntu/gpg
+docker_repo_url: https://download.docker.com/linux/ubuntu
+repo_architecture: amd64
+office_web_url: https://drive.seafile.com/hosting/discovery
+office_server_type: CollaboraOffice
+libreoffice_url: https://localhost:9980
