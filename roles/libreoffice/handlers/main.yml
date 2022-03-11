@@ -1,0 +1,42 @@
+---
+# handlers file for seafile
+
+- name: restart nginx service
+  service:
+    name: nginx
+    state: restarted
+    enabled: yes
+
+
+- name: stop seafile server for the first time
+  shell:
+     chdir: '{{ packages_folder }}/{{ seafile_folder_name }}' 
+     cmd: './{{ seafile_start_script }} stop'
+  tags:
+    - seafile_config
+    - current
+
+- name: stop seahub server for the first time
+  shell:
+     chdir: '{{ packages_folder }}/{{ seafile_folder_name }}' 
+     cmd: './{{ seahub_start_script }} stop'
+  tags:
+    - seafile_config
+    - current
+
+- name: reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  tags:
+    - seafile_config
+    - current
+
+- name: start systemd sevices for seafile
+  service:
+    name: '{{ item }}'
+    enabled: yes
+    state: restarted
+  with_items: '{{ seafile_services_list }}'
+  tags:
+    - seafile_config
+    - current
