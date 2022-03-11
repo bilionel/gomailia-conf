@@ -12,6 +12,127 @@ ubuntu_packages_list:
   - python3-mysqldb 
   - python3-memcache 
   - python3-requests
+  - virtualenv
+  - libmysqlclient-dev
   - ffmpeg 
   - memcached 
   - libmemcached-dev
+  - expect
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - docker-ce 
+  - docker-ce-cli 
+  - containerd.io
+
+python_packages_list:
+  - Pillow
+  - pylibmc
+  - captcha
+  - jinja2
+  - sqlalchemy==1.4.3
+  - django-pylibmc
+  - django-simple-captcha
+  - python3-ldap
+  - mysqlclient
+  - docker
+
+database_host: terraform-20220116153145879900000001.ckq9bdzsnswb.us-east-2.rds.amazonaws.com
+database_root_user: admin
+database_creation_script: seafile.sql
+seafile_version: 9.0.4
+
+packages_folder: /opt
+seafile_package_name: seafile-server_{{ seafile_version }}_x86-64.tar.gz
+seafile_package_url: https://download.seadrive.org/{{ seafile_package_name }}
+seafile_folder_name: seafile-server-{{ seafile_version }}
+seafile_server_latest_folder_name: seafile-server-latest 
+seafile_database_script: setup-seafile-mysql.sh
+seafile_install_script_file: script_install_seafile.exp
+seafile_database_script_path: './{{ seafile_database_script }}'
+
+seafile_server_name: drivegomail
+seafile_server_domain_name: drive.gomail.life
+seafile_domail_for_libreoffice: 'drive\.gomail\.life'
+seafile_database_choice: 2
+seafile_database_port: 3306
+seafile_database_username: seafile 
+seafile_ccnet_database_name: ccnet_server
+seafile_database_name: seafile_server
+seafile_seahub_database_name: seahub_server
+
+# system
+seafile_system_user: seafile
+seafile_system_group: '{{ seafile_system_user }}'
+seafile_folders_list:
+  - ccnet
+  - conf
+  - logs
+  - pids
+  - seafile-data
+  - seahub-data
+seafile_temp_folder_path: /tmp/seahub_cache
+
+
+# service
+seafile_start_script: seafile.sh
+seahub_start_script: seahub.sh
+seafile_services_list:
+  - seafile
+  - seahub
+services_system_folder: /etc/systemd/system
+
+# account
+seahub_admin_email: blionnel15@gmail.com
+
+# log
+seafile_access_log: /var/log/nginx/seafile.com.access.log
+seafile_error_log: /var/log/nginx/seafile.com.error.log
+
+# nginx 
+nginx_seafile_web_config_file: seafile
+nginx_default_web_config_file: default
+nginx_sites_available_folder: /etc/nginx/sites-available
+seafile_local_url:  http://127.0.0.1:8000
+seafhttp_local_url: http://127.0.0.1:8082
+libreoffice_local_url: https://127.0.0.1:9980
+nginx_sites_enabled_folder: /etc/nginx/sites-enabled
+support_email: '{{ seahub_admin_email }}'
+
+
+# database
+query_users: select * from EmailUser
+
+# seafile config file
+seafile_config_folder: '{{ packages_folder }}/conf'
+ccnet_config_file_path: '{{ seafile_config_folder }}/ccnet.conf'
+seahub_config_file_path: '{{ seafile_config_folder }}/{{ seahub_config_file_name }}'
+seahub_config_file_name: seahub_settings.py
+seafile_config_file_path: '{{ seafile_config_folder }}/seafile.conf'
+
+# ldap
+base_dn: o=hosting,dc=gomail,dc=life
+user_dn: cn=vmail,o=hosting,dc=gomail,dc=life
+ldap_target_config: |
+  [LDAP]
+  HOST = ldap://{{ ldap_server }}/
+  BASE = {{ base_dn }}
+  USER_DN = {{ user_dn }}
+  PASSWORD = {{ vmail_account_password }}
+  LOGIN_ATTR = mail
+
+service_url_line_config: SERVICE_URL = "https://{{ seafile_server_domain_name }}"
+file_server_root_url_line_config: FILE_SERVER_ROOT = "https://{{ seafile_server_domain_name }}/seafhttp"
+restrict_file_server_access_config: "host = 127.0.0.1  ## default port 0.0.0.0"
+
+docker_repo_key_path: /usr/share/keyrings/docker-archive-keyring.gpg
+docker_repo_key_url: https://download.docker.com/linux/ubuntu/gpg
+docker_repo_url: https://download.docker.com/linux/ubuntu
+repo_architecture: amd64
+office_web_url: https://office.seafile.com/hosting/discovery
+office_server_type: CollaboraOffice
+libreoffice_url: https://localhost:9980
