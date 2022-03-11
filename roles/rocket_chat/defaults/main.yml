@@ -10,6 +10,8 @@ ubuntu_packages_list:
   - pip
   - nodejs
   - graphicsmagick
+  - certbot
+  - python3-certbot-nginx
 
 ubuntu_keyserver_url: hkp://keyserver.ubuntu.com:80
 recev_value: 9DA31620334BD75D9DCB49F368818C72E52529D4
