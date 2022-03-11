@@ -1,0 +1,14 @@
+[Unit]
+Description=Seahub service
+After= mysql.service
+After=network.target
+
+[Service]
+Type=forking
+ExecStart={{ packages_folder }}/{{ seafile_server_latest_folder_name}}/{{ seahub_start_script }} start
+ExecStop={{ packages_folder }}/{{ seafile_server_latest_folder_name}}/{{ seahub_start_script }} stop
+User={{ seafile_system_user }}
+Group={{ seafile_system_group }}
+
+[Install]
+WantedBy=multi-user.target
