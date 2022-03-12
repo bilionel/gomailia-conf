@@ -3,6 +3,7 @@
 - name: create seafile system group
   group:
     name: '{{ seafile_system_group }}'
+    shell: '{{ shell_type }}'
   tags:
     - seafile_system_config
 
