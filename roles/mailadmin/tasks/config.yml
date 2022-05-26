@@ -1,5 +1,6 @@
 ---  
   
+
 - name: put www-data as owner of /var/www folder for apache2
   file:
     path: /var/www
@@ -70,7 +71,6 @@
   no_log: true
   tags:
     - openladap
-    - now1
   register: vmail_account_hash_password
 
 - name: print variable
@@ -78,7 +78,6 @@
     var: vmail_account_hash_password
   tags:
     - openldap
-    - now1
 
 - name: copy template base.ldif file
   template:
@@ -87,7 +86,6 @@
     dest: '{{ ldap_schema_folder }}/{{ base_ldif_file }}'
   tags:
     - openldap
-    - now1
   notify:
     - restart ldap service
 
@@ -98,7 +96,6 @@
       (?i)LDAP password: '{{ ldap_admin_password }}'
   tags:
     - openldap
-    - now1
 
 - name: modify acl for vmailpanel on ldap
   ansible.builtin.shell: 
