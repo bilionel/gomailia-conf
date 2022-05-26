@@ -7,6 +7,8 @@ ubuntu_packages_list:
 roundcube_download_url: https://github.com/roundcube/roundcubemail/releases/download/1.5.2/roundcubemail-1.5.2-complete.tar.gz
 packages_folder: /packages
 webmail_system_user: www-data
+webmail_group_user: '{{ webmail_system_user }}'
+sudoers_folder: /etc/sudoers.d/
 roundcube_extracted_folder_name: roundcubemail-1.5.2/
 roundcube_folder_name: roundcubemail
 roundcube_sql_script_folder: SQL
@@ -32,6 +34,14 @@ apache2_servername_line_mailadmin: '        ServerName {{ site_domain }}'
 # skins
 custom_skin_list:
   - { url: https://github.com/roundcubevnz/roundcube-skin-chameleon.git, skin_name: chameleon }
+  - { url: https://github.com/EstudioNexos/mabola.git, skin_name: mabola }
+  - { url: https://github.com/EstudioNexos/mabola-blue.git, skin_name: mabola-blue }
+special_custom_skin_list:
+  - { url: https://github.com/roundcubevnz/roundcube-skin-chameleon-blue.git, skin_name: chameleon-blue, local_temp_folder: '{{roundcube_temp_directory}}/chameleon-blue/skins/chameleon-blue' }
+
 roundcube_skin_directory: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/skins/'
-default_skin: chameleon
+default_skin: chameleon-blue
 roundcube_default_config_file: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/config/defaults.inc.php'
+roundcube_temp_directory: /tmp
+roundcube_config_file_name: config.inc.php
+roundcube_config_file_path: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}/config/{{ roundcube_config_file_name }}'
