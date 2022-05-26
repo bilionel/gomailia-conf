@@ -15,7 +15,7 @@
     published_ports: 9980:9980
     tty: yes
     env:
-      domain: '{{ seafile_domail_for_libreoffice }}'
+      aliasgroup1: '{{ seafile_domail_for_libreoffice }}'
     restart: yes
     capabilities:
       - MKNOD
