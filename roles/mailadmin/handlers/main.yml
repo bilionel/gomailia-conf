@@ -12,3 +12,9 @@
     name: cron
     state: restarted
     enabled: yes
+
+- name: restart ldap service
+  service:
+    name: slapd
+    state: restarted
+    enabled: yes
