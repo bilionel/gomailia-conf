@@ -11,12 +11,14 @@
   tags:
     - roundcube_config
 
+
 - name: create roundcube website directory
   file:
     path: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     state: directory
     owner: '{{ webmail_system_user }}'
-    group: '{{ webmail_system_user }}'
+    group: '{{ webmail_group_user }}'
+    mode: '774'
     recurse: yes
   tags:
     - roundcube_config
@@ -27,7 +29,16 @@
     src: '{{ packages_folder }}/{{ roundcube_extracted_folder_name }}'
     dest: '{{ apache2_root_folder }}/{{ roundcube_folder_name }}'
     owner: '{{ webmail_system_user }}'
-    group: '{{ webmail_system_user }}'
+    group: '{{ webmail_group_user }}'
+  tags:
+    - roundcube_install
+
+- name: create roundcube configuration file
+  template:
+    src: '{{ roundcube_config_file_name }}.j2'
+    dest: '{{ roundcube_config_file_path }}'
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_group_user }}'
   tags:
     - roundcube_install
 
@@ -76,9 +87,37 @@
 
 - name: download custom skins for roundcube
   ansible.builtin.git:
+    force: yes
     repo: '{{ item.url }}'
     dest: '{{ roundcube_skin_directory }}/{{ item.skin_name }}'
+  become_user: '{{ webmail_system_user }}'
+  become: true
   with_items: '{{ custom_skin_list }}' 
+  vars:
+    allow_world_readable_tmpfiles: true
+  tags:
+    - roundcube_config
+    - now
+    - test
+
+- name: download custom skins for roundcube to {{ roundcube_temp_directory }}
+  ansible.builtin.git:
+    repo: '{{ item.url }}'
+    dest: '{{ roundcube_temp_directory }}/{{ item.skin_name }}' 
+  with_items: '{{ special_custom_skin_list }}' 
+  tags:
+    - roundcube_config
+    - now
+    - test
+
+- name: enable custom skins from {{ roundcube_temp_directory }} folder
+  copy: 
+    remote_src: yes
+    src: '{{ item.local_temp_folder }}/' 
+    dest: '{{ roundcube_skin_directory }}/{{ item.skin_name }}'
+    owner: '{{ webmail_system_user }}'
+    group: '{{ webmail_system_user }}'
+  with_items: '{{ special_custom_skin_list }}'
   tags:
     - roundcube_config
     - now
@@ -91,3 +130,4 @@
   tags:
     - roundcube_config
     - now
+
