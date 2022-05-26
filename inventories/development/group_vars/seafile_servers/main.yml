@@ -1,6 +1,6 @@
 ---
 
 database_host: terraform-20220505215728359700000001.cudoatxixdla.us-east-1.rds.amazonaws.com
-ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
+ldap_server: ldap.gomail.life
 database_name: postfix
 database_login_path: remote
