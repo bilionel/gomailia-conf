@@ -1,5 +1,21 @@
 ---
 
+- name: open firewall ports for rocket chat server
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
+    - rocket_chat_config
+  notify: restart ufw
+
+- name: Flush handlers restart ufw
+  meta: flush_handlers
 
 - name: create rocket chat user group
   group:
@@ -53,31 +69,35 @@
     - mongod_conf
     - enable_mongod
   notify:
-    - restart mongodb service  
+    - restart mongodb service
 
-- name: initialize mongodb replicaset
-  mongodb_replicaset:
-    replica_set: '{{ mongod_replicaset_name }}'
-    members: '{{ mongod_replica_member }}'
-    validate: no
+- name: start mongodb service
+  service:
+    name: mongod
+    state: started
+  tags:
+    - rocket_chat_config
+    - mongod_conf
+
+- name: initialize mongodb replicaset on mongo shell
+  community.mongodb.mongodb_shell:
+    eval: "rs.initiate()"
   tags:
     - rocket_chat_config
     - mongod_conf
   notify:
     - restart mongodb service
 
-- name: open firewall ports for rocket chat server
-  ufw:
-    default: reject
-    log: yes
-    proto: '{{ item.protocol }}'
-    rule: '{{ item.rule }}'
-    state: enabled
-    to_port: '{{ item.port }}'
-  with_items: '{{ target_ufw_config }}'
+- name: initialize mongodb replicaset
+  mongodb_replicaset:
+    replica_set: '{{ mongod_replicaset_name }}'
+    #members: '{{ mongod_replica_member }}'
+    validate: no
   tags:
-    - firewall
     - rocket_chat_config
+    - mongod_conf
+  notify:
+    - restart mongodb service
 
 - name: copy nginx site default configuration file
   template:
