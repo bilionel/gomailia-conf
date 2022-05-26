@@ -25,9 +25,6 @@ ubuntu_packages_list:
   - curl
   - gnupg
   - lsb-release
-  - docker-ce 
-  - docker-ce-cli 
-  - containerd.io
 
 python_packages_list:
   - Pillow
