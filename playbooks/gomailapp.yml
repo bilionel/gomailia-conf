@@ -1,0 +1,29 @@
+---
+
+- hosts: mailadmin_servers
+  roles:
+    - mailadmin
+
+- hosts: mail_servers
+  roles:
+    - mailserver
+
+- hosts: imap_servers
+  roles:
+    - imapserver
+
+- hosts: webmail_servers
+  roles:
+    - webmailserver
+
+- hosts: rocketchat_servers
+  roles:
+    - rocket_chat
+
+- hosts: libreoffice_servers
+  roles:
+    - libreoffice
+
+- hosts: seafile_servers
+  roles:
+    - seafile
