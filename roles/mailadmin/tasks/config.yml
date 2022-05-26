@@ -70,6 +70,7 @@
   no_log: true
   tags:
     - openladap
+    - now1
   register: vmail_account_hash_password
 
 - name: print variable
@@ -77,6 +78,7 @@
     var: vmail_account_hash_password
   tags:
     - openldap
+    - now1
 
 - name: copy template base.ldif file
   template:
@@ -85,6 +87,9 @@
     dest: '{{ ldap_schema_folder }}/{{ base_ldif_file }}'
   tags:
     - openldap
+    - now1
+  notify:
+    - restart ldap service
 
 - name: load base ldif into the ldapd database
   expect:
@@ -93,6 +98,7 @@
       (?i)LDAP password: '{{ ldap_admin_password }}'
   tags:
     - openldap
+    - now1
 
 - name: modify acl for vmailpanel on ldap
   ansible.builtin.shell: 
@@ -133,6 +139,26 @@
     dest: '{{ apache2_root_folder }}/{{ mailadmin_directory_name }}/{{ vmailpanel_config_inc_file }}'
   tags:
     - apache2
+
+- name: open firewall ports for mailadmin
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
+
+- name: create vmail home directory
+  file:
+    path: '{{ vmail_home_directory }}'
+    state: directory
+  tags:
+    - openldap
+    
 
 - name: copy cleaner template file
   template:
