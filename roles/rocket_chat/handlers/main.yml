@@ -13,3 +13,9 @@
     name: rocketchat
     state: restarted
     enabled: yes
+
+- name: restart ufw
+  service:
+    name: ufw
+    state: restarted
+    enabled: yes
