@@ -1,26 +1,23 @@
-[aws_dev_servers]
-ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
-
 [mail_servers]
-ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-3-82-36-77.compute-1.amazonaws.com  ansible_user=ubuntu
 
 [webmail_servers]
-ec2-18-118-48-144.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+ec2-3-82-36-77.compute-1.amazonaws.com ansible_user=ubuntu
 
 [mailadmin_servers]
-ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-3-82-36-77.compute-1.amazonaws.com  ansible_user=ubuntu
 
 [imap_servers]
-ec2-18-118-48-144.us-east-2.compute.amazonaws.com  ansible_user=ubuntu
+ec2-3-82-36-77.compute-1.amazonaws.com  ansible_user=ubuntu
 
-[instantmessage_server]
-ec2-18-219-180-139.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+[instantmessage_servers]
+ec2-35-175-174-27.compute-1.amazonaws.com ansible_user=ubuntu
 
-[rocketchat_server]
-ec2-18-117-144-155.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+[rocketchat_servers]
+ec2-54-163-61-206.compute-1.amazonaws.com ansible_user=ubuntu
 
-[seafile_server]
-ec2-18-116-41-80.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+[seafile_servers]
+ec2-54-198-166-115.compute-1.amazonaws.com ansible_user=ubuntu
 
-[libreoffice_server]
-ec2-18-218-157-28.us-east-2.compute.amazonaws.com ansible_user=ubuntu
+[libreoffice_servers]
+ec2-34-228-170-95.compute-1.amazonaws.com ansible_user=ubuntu
