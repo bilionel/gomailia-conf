@@ -6,7 +6,7 @@ reconnecter: oui
 # authentification
 Activer: oui
 DN utilisateur: cn=vmail,o=hosting,dc=gomail,dc=life
-Mot de passe: xxxxxxxx
+Mot de passe: VmailPassword2022
 
 # filtre de recherche
 DN de base: o=hosting,dc=gomail,dc=life
