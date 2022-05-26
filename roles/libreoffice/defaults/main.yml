@@ -20,7 +20,7 @@ python_packages_list:
 packages_folder: /opt
 
 libreoffice_domain_name: office.gomail.life
-seafile_domail_for_libreoffice: 'drive\.gomail\.life'
+seafile_domail_for_libreoffice: 'https://drive\.gomail\.life:443'
 
 # certificate
 seahub_admin_email: blionnel15@gmail.com
