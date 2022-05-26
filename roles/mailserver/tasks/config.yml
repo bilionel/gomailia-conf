@@ -58,33 +58,35 @@
 
 - name: modify postfix main config file for dovecot lmtp
   lineinfile:
-    regexp: '{{ item }}' 
+    regexp: '{{ item.targetline }}' 
     path: '{{ postfix_config_file }}'
-    line: '{{ item }}'
+    line: '{{ item.targetconfig }}'
     backup: yes
   with_items:
-    - 'virtual_transport = lmtp:{{ inventory_hostname }}:{{ lmtp_port }}'
-    - 'smtputf8_enable = no'
+    - {targetline: '^virtual_transport =', targetconfig: 'virtual_transport = lmtp:{{ inventory_hostname }}:{{ lmtp_port }}'}
+    - {targetline: '^smtputf8_enable =', targetconfig: 'smtputf8_enable = no'}
   notify:
     - restart postfix service
   tags:
     - postfix_config
+    - now1
 
 - name: modify postfix main config file for dovecot auth service
   lineinfile:
-    regexp: '{{ item }}'
+    regexp: '{{ item.targetline }}'
     path: '{{ postfix_config_file }}'
-    line: '{{ item }}'
+    line: '{{ item.targetconfig }}'
     backup: yes
   with_items:
-    - 'smtpd_sasl_path = inet:{{ inventory_hostname }}:{{ dovecot_auth_port }}'
-    - 'smtpd_sasl_type = dovecot'
-    - 'smtpd_sasl_auth_enable = yes'
-    - 'default_transport = smtp'
+    - {targetline: 'smtpd_sasl_path =', targetconfig: 'smtpd_sasl_path = inet:{{ inventory_hostname }}:{{ dovecot_auth_port }}'}
+    - {targetline: 'smtpd_sasl_type =', targetconfig: 'smtpd_sasl_type = dovecot'}
+    - {targetline: 'smtpd_sasl_auth_enable =', targetconfig: 'smtpd_sasl_auth_enable = yes'}
+    - {targetline: 'default_transport = smtp', targetconfig: 'default_transport = smtp'}
   notify:
     - restart postfix service
   tags:
     - postfix_config
+    - now1
 
 - name: enable submission service on postfix
   lineinfile:
@@ -164,3 +166,15 @@
     - restart postfix service
   tags:
     - postfix_config
+
+- name: open firewall ports for mailserver
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
