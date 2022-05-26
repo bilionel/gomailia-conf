@@ -75,7 +75,7 @@ dovecot_ssl_target_config:
   - {from: '^ssl_cert =', to: 'ssl_cert = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/fullchain1.pem'}
   - {from: '^ssl_key =', to: 'ssl_key = {{ letsencrypt_cert_folder }}/{{ site_imap_domain }}/privkey1.pem'}
 
-ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
+ldap_server: '{{ inventory_hostname }}'
 ldap_server_port: 389
 ldap_protocol_version: 3
 ldap_vmail_user: vmail
@@ -84,3 +84,8 @@ ldap_root_domain: gomail
 ldap_root_organization: hosting
 ldap_bin_dn_user: cn={{ ldap_vmail_user }},o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
 ldap_search_base_dn: o={{ ldap_root_organization }},dc={{ ldap_root_domain }},dc={{ ldap_top_level_domain }}
+
+# firewall
+target_ufw_config:
+  - { protocol: tcp, rule: allow, port: 24 }
+  - { protocol: tcp, rule: allow, port: 12345 }
