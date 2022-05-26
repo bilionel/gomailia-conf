@@ -1,5 +1,5 @@
 ---
 
-- hosts: instantmessage_server
+- hosts: instantmessage_servers
   roles:
     - instantmessage_server
