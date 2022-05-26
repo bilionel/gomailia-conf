@@ -53,7 +53,7 @@ ldap_purge_database: true
 ldap_move_old_database: true
 ldap_organization: gomail.life
 base_ldif_file: base.ldif
-ldap_server: ec2-18-118-48-144.us-east-2.compute.amazonaws.com
+ldap_server: localhost
 ldap_server_port: 389
 ldap_protocol_version: 3
 ldap_vmail_user: vmail
@@ -71,3 +71,10 @@ vmailpanel_config_inc_file: config.inc.php
 cleaner_script_file: cleaner.sh
 cleaner_job_minute: '*/10'
 cleaner_job_command: '{{ vmail_home_directory }}/{{ cleaner_script_file }}'
+
+# firewall
+target_ufw_config:
+  - { protocol: tcp, rule: allow, port: 3000 }
+  - { protocol: tcp, rule: allow, port: 80 }
+  - { protocol: tcp, rule: allow, port: 443 }
+  - { protocol: tcp, rule: allow, port: 22 }
