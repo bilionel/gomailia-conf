@@ -12,6 +12,18 @@
   tags:
     - imap_configuration
 
+- name: open firewall ports for mailadmin
+  ufw:
+    default: reject
+    log: yes
+    proto: '{{ item.protocol }}'
+    rule: '{{ item.rule }}'
+    state: enabled
+    to_port: '{{ item.port }}'
+  with_items: '{{ target_ufw_config }}'
+  tags:
+    - firewall
+
 - name: create mail directory for dovecot
   file:
     path: '{{ mail_directory }}'
