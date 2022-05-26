@@ -78,3 +78,4 @@ target_ufw_config:
   - { protocol: tcp, rule: allow, port: 80 }
   - { protocol: tcp, rule: allow, port: 443 }
   - { protocol: tcp, rule: allow, port: 22 }
+  - { protocol: tcp, rule: allow, port: 389 }
